@@ -80,7 +80,6 @@ recovery/ARTIFACT_PROVENANCE.md
 
 SCHEMAS
 schemas/tie_package.reconstructed.schema.json
-schemas/evidence_and_package_baseline.json
 
 TESTS
 9 tests executed successfully.
