@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tie.models import Provenance, TIEPackage, TypedHandoff, BuildClassification
 from tie.validation import validate_package
+from tie.validation.validate import coverage_gaps
 
 
 def build_package(*, package_id: str, source, coverage, evidence=(), artifacts=(), identity_references=(), relationships=(), reconstruction=None, knowledge_views=None, routing_signal=None, objective="Provide source-grounded transcript intelligence to downstream Gems.") -> TIEPackage:
@@ -10,9 +11,13 @@ def build_package(*, package_id: str, source, coverage, evidence=(), artifacts=(
         source_id=source.source_id,
         evidence_ids=tuple(e.evidence_id for e in evidence),
         artifact_ids=tuple(a.artifact_id for a in artifacts),
+        # What the package itself says it does not know: evidence of
+        # uncertain standing, and every part of the source that was not
+        # looked at. Silence about uninspected segments reads downstream as
+        # "nothing to report", which is exactly wrong.
         known_uncertainty=tuple(
             e.evidence_id for e in evidence if e.epistemic_status.value in {"UNKNOWN", "CONFLICTED"}
-        ),
+        ) + coverage_gaps(coverage),
         routing_signal=routing_signal,
         provenance=source.provenance,
     )
