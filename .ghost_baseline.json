@@ -21,5 +21,28 @@
     "severity": "minor",
     "status": "suppressed",
     "summary": "'reconstruct_summary' repeats the same single statement 2 times (lines 16-16, 17-17): same shape, names/literals differ"
+  },
+  {
+    "category": "duplication",
+    "confidence": null,
+    "detail": "Structural fingerprint match within one function, not a whole-function match (near_duplicate_function's detection is blind to this shape). Typical real cause: several branches each hand-build the same kind of object or perform the same sequence of calls -- worth a single shared helper if the branches really are doing the same thing, not just a coincidental resemblance.",
+    "detector": "intra_function_duplicate_block",
+    "disposition": null,
+    "disposition_note": "",
+    "evidence": {
+      "file": "/home/wking53214/TIE/src/tie/validation/validate.py",
+      "line_end": 41,
+      "line_start": 41,
+      "related_files": [
+        "/home/wking53214/TIE/src/tie/validation/validate.py:45-45"
+      ],
+      "snippet": null
+    },
+    "first_seen": "2026-09-08T03:47:39.749277+00:00",
+    "id": "ghost-eaf3e96720d0",
+    "layer": "mechanical",
+    "severity": "minor",
+    "status": "suppressed",
+    "summary": "'validate_package' repeats the same single statement 2 times (lines 41-41, 45-45): same shape, names/literals differ"
   }
 ]
