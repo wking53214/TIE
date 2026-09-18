@@ -44,6 +44,21 @@ Each stage has a distinct responsibility.
 
 The architecture is designed to prevent interpretation, reconstruction, or downstream organization from silently replacing the underlying source.
 
+### Upstream: Transcript Extraction Gem
+
+The SOURCE representation consumed by TIE is produced by the **Transcript Extraction Gem** (TE Gem), which performs first-pass evidence-preserving extraction from conversational transcripts.
+
+The TE Gem:
+- Extracts projects, goals, requirements, decisions, problems, solutions from raw transcript material
+- Preserves EXPLICIT / INFERRED / UNCERTAIN distinctions at extraction time
+- Maintains epistemic status (FACT, INFERENCE, ASSUMPTION, RECOMMENDATION, DECISION, UNKNOWN)
+- Traces every extraction back to source with evidence references
+- Produces a structured Transcript Extraction Package
+
+TIE then receives this extraction package as its SOURCE and applies the full preservation pipeline from COVERAGE onwards.
+
+For details, see `docs/TRANSCRIPT_EXTRACTION_GEM.md` and `docs/ARCHITECTURE.md` (Transcript Extraction Gem boundary section).
+
 ## Current Application
 
 The current implementation applies this architecture to transcript intelligence.
