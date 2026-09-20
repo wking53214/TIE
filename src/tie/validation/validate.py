@@ -28,37 +28,37 @@ def coverage_gaps(coverage) -> tuple[str, ...]:
     return tuple(gaps)
 
 
-def validate_package(package: TIEPackage) -> ValidationResult:
+def validate_package(pkg: TIEPackage) -> ValidationResult:
     checks: dict[str, bool] = {}
     errors: list[str] = []
     warnings: list[str] = []
 
-    checks["source_present"] = bool(package.source.content is not None)
-    checks["coverage_source_matches"] = package.coverage.source_id == package.source.source_id
-    checks["evidence_have_source_refs"] = all(e.source_ref.source_id == package.source.source_id for e in package.evidence)
-    checks["reconstruction_is_derived"] = package.reconstruction is None or package.reconstruction.evidence_ids
+    checks["source_present"] = bool(pkg.source.content is not None)
+    checks["coverage_source_matches"] = pkg.coverage.source_id == pkg.source.source_id
+    checks["evidence_have_source_refs"] = all(e.source_ref.source_id == pkg.source.source_id for e in pkg.evidence)
+    checks["reconstruction_is_derived"] = pkg.reconstruction is None or pkg.reconstruction.evidence_ids
     checks["routing_not_execution"] = True
-    checks["coverage_complete_claim_is_honest"] = not package.coverage.complete or bool(package.coverage.segments)
+    checks["coverage_complete_claim_is_honest"] = not pkg.coverage.complete or bool(pkg.coverage.segments)
     # A source none of whose segments was inspected has not been read. Such a
     # package can carry evidence records, but nothing ties them to inspected
     # text, so it is not source-grounded intelligence and does not validate.
     checks["coverage_inspected_any"] = (
-        not package.coverage.segments or bool(package.coverage.inspected_segments)
+        not pkg.coverage.segments or bool(pkg.coverage.inspected_segments)
     )
     # Recorded, not required: partial coverage is honest as long as it is
     # said. The gaps themselves go into warnings and the handoff.
     checks["coverage_all_inspected"] = (
-        not package.coverage.segments or package.coverage.complete
+        not pkg.coverage.segments or pkg.coverage.complete
     )
 
     for name, ok in checks.items():
         if not ok and name != "coverage_all_inspected":
             errors.append(name)
 
-    if not package.coverage.segments:
+    if not pkg.coverage.segments:
         warnings.append("No coverage segments are recorded.")
-    warnings.extend(coverage_gaps(package.coverage))
-    if package.reconstruction and not package.reconstruction.evidence_ids:
+    warnings.extend(coverage_gaps(pkg.coverage))
+    if pkg.reconstruction and not pkg.reconstruction.evidence_ids:
         errors.append("Reconstruction must cite evidence.")
 
     return ValidationResult(valid=not errors, checks=checks, errors=tuple(errors), warnings=tuple(warnings))
