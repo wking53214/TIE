@@ -1,0 +1,142 @@
+[
+  {
+    "attributes": {},
+    "category": "duplication",
+    "confidence": null,
+    "detail": "Structural fingerprint match within one function, not a whole-function match (near_duplicate_function's detection is blind to this shape). Typical real cause: several branches each hand-build the same kind of object or perform the same sequence of calls -- worth a single shared helper if the branches really are doing the same thing, not just a coincidental resemblance.",
+    "detector": "intra_function_duplicate_block",
+    "disposition": null,
+    "disposition_note": "",
+    "evidence": {
+      "absolute_file": null,
+      "file": "reconstruction/reconstruct.py",
+      "line_end": 16,
+      "line_start": 16,
+      "related_files": [
+        "reconstruction/reconstruct.py:17-17"
+      ],
+      "snippet": null
+    },
+    "first_seen": "2026-09-03T03:41:20.166972+00:00",
+    "id": "ghost-597afdf029f9",
+    "layer": "mechanical",
+    "severity": "minor",
+    "status": "suppressed",
+    "summary": "'reconstruct_summary' repeats the same single statement 2 times (lines 16-16, 17-17): same shape, names/literals differ"
+  },
+  {
+    "attributes": {},
+    "category": "duplication",
+    "confidence": null,
+    "detail": "Structural fingerprint match within one function, not a whole-function match (near_duplicate_function's detection is blind to this shape). Typical real cause: several branches each hand-build the same kind of object or perform the same sequence of calls -- worth a single shared helper if the branches really are doing the same thing, not just a coincidental resemblance.",
+    "detector": "intra_function_duplicate_block",
+    "disposition": null,
+    "disposition_note": "",
+    "evidence": {
+      "absolute_file": null,
+      "file": "validation/validate.py",
+      "line_end": 41,
+      "line_start": 41,
+      "related_files": [
+        "validation/validate.py:45-45"
+      ],
+      "snippet": null
+    },
+    "first_seen": "2026-09-08T03:47:39.749277+00:00",
+    "id": "ghost-eaf3e96720d0",
+    "layer": "mechanical",
+    "severity": "minor",
+    "status": "suppressed",
+    "summary": "'validate_package' repeats the same single statement 2 times (lines 41-41, 45-45): same shape, names/literals differ"
+  },
+  {
+    "attributes": {
+      "declared_members": "3",
+      "documented_as_from_data": "no",
+      "enum": "OriginKind",
+      "member": "AI",
+      "produced_by_tests_only": "yes",
+      "produced_members": "1",
+      "provenance": "never_produced",
+      "reachable_from_data": "no"
+    },
+    "category": "other",
+    "confidence": null,
+    "detail": "An enum is a vocabulary of states, and a member nothing produces is a distinction the vocabulary claims and the behaviour does not have. Every branch written to handle it is unreachable; anything dispatching on the enum silently does nothing for it; and a reader believes the system can be in a state it cannot deliberately enter.\n\nThis is reported because OTHER members of the same enum are produced. An enum reconstructed entirely from data is not a defect and is not flagged.\n\nNo commit ever produced it: it was declared and never wired up.\n\nA test does construct it, which proves it is handled and not that anything reaches it. Handling a state nothing produces is the branch this finding is about.\n\nIt does not claim the state is unreachable. What is checked here is syntactic, and a value read back from a stored record can still arrive by a path this tool cannot see -- which is worse rather than better: the state enters from data into code that never intends it.\n\nEither produce it, give it a documented path in from stored data, or remove it -- and if something dispatches on this enum, check what that dispatch does when this member arrives, because today it may do nothing at all.",
+    "detector": "unreachable_declared_state",
+    "disposition": null,
+    "disposition_note": "",
+    "evidence": {
+      "absolute_file": null,
+      "file": "src/tie/models/core.py",
+      "line_end": 18,
+      "line_start": 18,
+      "related_files": [],
+      "snippet": null
+    },
+    "first_seen": "2026-09-20T06:59:16.603263+00:00",
+    "id": "ghost-578b9a926af9",
+    "layer": "mechanical",
+    "severity": "minor",
+    "status": "suppressed",
+    "summary": "'OriginKind.AI' is declared and only test code puts anything into it, though 1 other member(s) of OriginKind are produced"
+  },
+  {
+    "attributes": {
+      "declared_members": "3",
+      "documented_as_from_data": "no",
+      "enum": "OriginKind",
+      "member": "HUMAN",
+      "produced_by_tests_only": "yes",
+      "produced_members": "1",
+      "provenance": "never_produced",
+      "reachable_from_data": "no"
+    },
+    "category": "other",
+    "confidence": null,
+    "detail": "An enum is a vocabulary of states, and a member nothing produces is a distinction the vocabulary claims and the behaviour does not have. Every branch written to handle it is unreachable; anything dispatching on the enum silently does nothing for it; and a reader believes the system can be in a state it cannot deliberately enter.\n\nThis is reported because OTHER members of the same enum are produced. An enum reconstructed entirely from data is not a defect and is not flagged.\n\nNo commit ever produced it: it was declared and never wired up.\n\nA test does construct it, which proves it is handled and not that anything reaches it. Handling a state nothing produces is the branch this finding is about.\n\nIt does not claim the state is unreachable. What is checked here is syntactic, and a value read back from a stored record can still arrive by a path this tool cannot see -- which is worse rather than better: the state enters from data into code that never intends it.\n\nEither produce it, give it a documented path in from stored data, or remove it -- and if something dispatches on this enum, check what that dispatch does when this member arrives, because today it may do nothing at all.",
+    "detector": "unreachable_declared_state",
+    "disposition": null,
+    "disposition_note": "",
+    "evidence": {
+      "absolute_file": null,
+      "file": "src/tie/models/core.py",
+      "line_end": 17,
+      "line_start": 17,
+      "related_files": [],
+      "snippet": null
+    },
+    "first_seen": "2026-09-20T06:59:16.621322+00:00",
+    "id": "ghost-817cc6852be3",
+    "layer": "mechanical",
+    "severity": "minor",
+    "status": "suppressed",
+    "summary": "'OriginKind.HUMAN' is declared and only test code puts anything into it, though 1 other member(s) of OriginKind are produced"
+  },
+  {
+    "attributes": {
+      "kind": "tests nobody runs",
+      "test_files": "6"
+    },
+    "category": "architecture",
+    "confidence": null,
+    "detail": "Somebody wrote these. Tests pay off on every commit rather than on the afternoon they were written, and without CI they only run when a person remembers -- which is exactly when the code is least likely to be broken, because they were already thinking about it.\n\nThis is deliberately NOT reported as 'this repository has no CI'. Plenty of repositories are fine without it: a scratch pad, a spike, a corpus. The claim here is narrower and it is about wasted work already done, not about process for its own sake.",
+    "detector": "no_ci_configuration",
+    "disposition": null,
+    "disposition_note": "",
+    "evidence": {
+      "absolute_file": null,
+      "file": "user/tie-work",
+      "line_end": null,
+      "line_start": null,
+      "related_files": [],
+      "snippet": null
+    },
+    "first_seen": "2026-09-20T06:59:16.731279+00:00",
+    "id": "ghost-a6861a3f1bd2",
+    "layer": "mechanical",
+    "severity": "minor",
+    "status": "suppressed",
+    "summary": "tests nobody runs: 6 test file(s) exist and no CI configuration runs them"
+  }
+]
