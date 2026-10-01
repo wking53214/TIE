@@ -6,7 +6,7 @@ The Transcript Extraction Gem (TE Gem) is the first-stage processor in the TIE s
 
 **Role:** First-pass knowledge extraction from conversational transcripts  
 **Output:** SOURCE representation consumed by TIE  
-**Specification Status:** COMPLETE (available in GEMS repository)
+**Specification Status:** COMPLETE (available outside this repository)
 
 ## Integration with TIE
 
@@ -141,6 +141,6 @@ The TE Gem output is evaluated on:
 
 ## References
 
-- **GEMS Repository** — Contains Transcript Extraction Gem specification and reference implementation
+- **External specification:** the Transcript Extraction Gem specification and reference implementation, available outside this repository
 - **TIE ARCHITECTURE.md** — Integration pattern and boundary preservation rules
 - **TIE SOURCE.md** — Details on SOURCE representation consumed from TE Gem

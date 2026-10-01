@@ -4,7 +4,7 @@ Reconstructed **transcript → evidence-preserving package** baseline. Principle
 
 ## 1. Pipeline Position & Role
 
-**SPECIALIZED INLET.** Conceptual Gem-layer 1 / source package for GEMS. Optional `tie_governance_adapter.py` in observe-perceive. Handoff is data, **not execution**.
+**SPECIALIZED INLET.** Conceptual Gem-layer 1 / source package. An optional adapter for it lives in another component. Handoff is data, **not execution**.
 
 ## 2. Full System Scope & Architectural Depth
 
@@ -28,7 +28,7 @@ Does not extract from transcripts, talk to a model, persist, implement the Trans
 
 ## 4. Brutally Honest Current Status & Gaps
 
-Commercial: **FEATURE; suite too thin** (integration happy path; BUILD_STATUS historically `9 passed in 0.09s`). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. GEMS `require_tie_adapter()` **raises** `TIEIntegrationMissing`.
+Commercial: **FEATURE; suite too thin** (integration happy path; BUILD_STATUS historically `9 passed in 0.09s`). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. Downstream integration is **unwired**.
 
 Zero runtime deps. Python ≥ 3.11.
 
@@ -43,8 +43,7 @@ Validation can fail a package. Empty statement → `ValueError`. `routing_not_ex
 ## 7. Stack Integration Topology
 
 ```text
-(missing TE Gem) → TIE types → GEMS (unwired, raises) / Resume_OS (conceptual)
-observe-perceive tie_governance_adapter (opt)
+(missing TE Gem) → TIE types → downstream consumers (unwired or conceptual)
 ```
 
 Apache-2.0. Read `BUILD_STATUS.md` before `README` ambition pages.
