@@ -8,7 +8,7 @@
     "disposition": null,
     "disposition_note": "",
     "evidence": {
-      "absolute_file": "/tmp/claude-1000/-home-wking53214/f7f86960-5cd3-4e63-a084-1fe153210437/scratchpad/ghost_survey/clones/TIE/src/tie/reconstruction/reconstruct.py",
+      "absolute_file": null,
       "file": "reconstruction/reconstruct.py",
       "line_end": 16,
       "line_start": 16,
@@ -33,7 +33,7 @@
     "disposition": null,
     "disposition_note": "",
     "evidence": {
-      "absolute_file": "/home/wking53214/TIE/src/tie/validation/validate.py",
+      "absolute_file": null,
       "file": "validation/validate.py",
       "line_end": 41,
       "line_start": 41,
@@ -125,7 +125,7 @@
     "disposition": null,
     "disposition_note": "",
     "evidence": {
-      "absolute_file": "/home/user/tie-work",
+      "absolute_file": null,
       "file": "user/tie-work",
       "line_end": null,
       "line_start": null,
