@@ -9,7 +9,7 @@ description = "Reconstructed, evidence-preserving Transcript Intelligence Engine
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "William King" }]
+authors = [{ name = "William N. King" }]
 dependencies = []
 
 [project.optional-dependencies]
