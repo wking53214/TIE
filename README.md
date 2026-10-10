@@ -13,14 +13,14 @@ Intended stages: SOURCE → COVERAGE → EVIDENCE → ARTIFACTS → IDENTITY →
 **What the functions actually do:**
 
 - `create_source` — wrap a string
-- `segment_source(max_chars=4000)` — char windows + sha256; **always** `INSPECTED`
+- `segment_source(max_chars=4000)` — char windows + sha256; `INSPECTED` unless the caller declares otherwise: `not_inspected=[(start, end)]` marks the segments those ranges touch `NOT_INSPECTED`, and `declared_length=` (when the content is a truncated copy) records the rest as `MISSING`. TIE does not detect gaps itself; it records the ones it is told about
 - `evidence_from_statement` — caller supplies the statement (**no NLP**)
 - `reconstruct_summary` — join evidence as `"- {statement}"` bullets
 - `build_package` / `validate_package` — source present, coverage id match, evidence refs, reconstruction cites evidence, `routing_not_execution=True` (**hardcoded True**)
 
 90% of substance: frozen dataclasses in `src/tie/models/core.py`. Identity/relationship/handoff/provenance packages mostly re-export.
 
-Enums: `EpistemicStatus{EXPLICIT,INFERRED,UNKNOWN,CONFLICTED}`, `OriginKind{HUMAN,AI,UNKNOWN}`, `CoverageStatus`, `BuildClassification`.
+Enums: `EpistemicStatus{EXPLICIT,INFERRED,UNKNOWN,CONFLICTED}`, `OriginKind{HUMAN,AI,HUMAN_ACCEPTED_AI,UNKNOWN}`, `CoverageStatus`, `BuildClassification`.
 
 ## 3. What It Does NOT Do / Non-Goals
 
