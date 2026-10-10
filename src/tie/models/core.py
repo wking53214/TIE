@@ -16,6 +16,9 @@ class EpistemicStatus(str, Enum):
 class OriginKind(str, Enum):
     HUMAN = "HUMAN"
     AI = "AI"
+    # A person reviewed and accepted machine output. Not HUMAN (a person did not
+    # write it) and not AI (a person signed off).
+    HUMAN_ACCEPTED_AI = "HUMAN_ACCEPTED_AI"
     UNKNOWN = "UNKNOWN"
 
 
