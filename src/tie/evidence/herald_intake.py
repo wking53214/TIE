@@ -8,6 +8,11 @@ interpretation.
 
 Rules, all fail closed:
 - Refused claims never enter. Refused claims wait for a named human.
+- Only machine readings (EXTRACTED, INFERRED) enter. A HUMAN_CONFIRMED claim
+  is a person's sign-off and needs its own evidence path, not this one. Any
+  unknown reading is also left out.
+- Evidence IDs are derived from the claim's source hash, kind, span and text,
+  so re-ingesting the same export produces the same IDs instead of duplicates.
 - The HERALD export must pass a verifier the caller supplies. Without one,
   intake refuses. HERALD's export MAC is keyed to its own process, so a
   consumer in another process cannot check it alone.
@@ -25,7 +30,10 @@ from typing import Any, Callable, List, Mapping, Optional
 from tie.evidence.extract import evidence_from_statement
 from tie.models import EpistemicStatus, EvidenceRecord, SourceRecord
 
-__all__ = ["HeraldIntakeRefused", "evidence_from_herald_export"]
+__all__ = ["HeraldIntakeRefused", "evidence_from_herald_export", "MACHINE_READINGS"]
+
+#: HERALD readings that are machine output. HUMAN_CONFIRMED is absent on purpose.
+MACHINE_READINGS = frozenset({"EXTRACTED", "INFERRED"})
 
 
 class HeraldIntakeRefused(ValueError):
@@ -34,6 +42,17 @@ class HeraldIntakeRefused(ValueError):
 
 def _text_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _evidence_id(source_hash: str, entry: Mapping[str, Any]) -> str:
+    """Deterministic: the same claim read from the same text gets the same ID.
+
+    HERALD's claim_id is random per run, so using it would make every replay
+    of the same export look like new evidence.
+    """
+    start, end = entry["span"]
+    key = "|".join([source_hash, str(entry["kind"]), str(start), str(end), str(entry["raw"])])
+    return "herald-" + hashlib.sha256(key.encode("utf-8")).hexdigest()[:24]
 
 
 def evidence_from_herald_export(
@@ -64,11 +83,14 @@ def evidence_from_herald_export(
                 f"claim {entry.get('claim_id')!r} was read from different text "
                 "than the source it was offered with"
             )
+        if entry.get("reading") not in MACHINE_READINGS:
+            # A person's sign-off, or an unknown reading: not evidence this path takes.
+            continue
         statement = f"{entry['kind']}: {entry['raw']}"
         records.append(
             evidence_from_statement(
                 source,
-                evidence_id=f"herald-{entry['claim_id']}",
+                evidence_id=_evidence_id(expected_hash, entry),
                 statement=statement,
                 epistemic_status=EpistemicStatus.INFERRED,
                 segment_id=entry.get("segment"),
