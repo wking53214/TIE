@@ -49,6 +49,27 @@ def test_admitted_claims_become_inferred_evidence():
     assert EXPORT["admitted"][0]["raw"] in record.statement
 
 
+@pytest.mark.parametrize("reading", ["HUMAN_CONFIRMED", "WEIRD", None])
+def test_only_machine_readings_enter(reading):
+    export = json.loads(json.dumps(EXPORT))
+    export["admitted"][0]["reading"] = reading
+    assert evidence_from_herald_export(_source(), export, verify=_accept) == []
+
+
+def test_replaying_the_same_export_gives_the_same_evidence_ids():
+    first = evidence_from_herald_export(_source(), EXPORT, verify=_accept)
+    second = evidence_from_herald_export(_source(), EXPORT, verify=_accept)
+    assert [r.evidence_id for r in first] == [r.evidence_id for r in second]
+
+
+def test_same_claim_at_a_different_span_gets_a_different_id():
+    moved = json.loads(json.dumps(EXPORT))
+    moved["admitted"][0]["span"] = [moved["admitted"][0]["span"][0] + 1, moved["admitted"][0]["span"][1] + 1]
+    original = evidence_from_herald_export(_source(), EXPORT, verify=_accept)[0].evidence_id
+    shifted = evidence_from_herald_export(_source(), moved, verify=_accept)[0].evidence_id
+    assert original != shifted
+
+
 def test_refused_claims_never_enter():
     assert EXPORT["refused"], "fixture should include a refused claim"
     records = evidence_from_herald_export(_source(), EXPORT, verify=_accept)
