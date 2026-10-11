@@ -1,0 +1,94 @@
+{
+  "text": "The invoice total is 1250 dollars and it is due 2026-11-01. Paid approximately $1,250.00 today.",
+  "export": {
+    "document": {
+      "source_id": "inv-1",
+      "medium": "document",
+      "standing": "record",
+      "version": null,
+      "retrieved_at": null,
+      "content_hash": "cf8f69d25cd0c9e6304ebbcb5a517f5cb465e4db74d4ea9021ff61195b7c003f",
+      "length": 95,
+      "segments": 0
+    },
+    "herald": {
+      "version": "0.3.0",
+      "code_hash": "63b8594cb325ec1caf05f012b4c5e1d781f77bc87f462614d3ae06e980c9bbe2"
+    },
+    "prepared_at": "2026-10-11T04:44:52.775994+00:00",
+    "admitted": [
+      {
+        "claim_id": "clm-14fb99bfb70c",
+        "kind": "date",
+        "value": "2026-11-01",
+        "raw": "2026-11-01",
+        "span": [
+          48,
+          58
+        ],
+        "segment": null,
+        "bundle_id": "s1",
+        "confidence": 0.88,
+        "reasons": [
+          {
+            "code": "DEIXIS",
+            "detail": "'it' at chars 38-40",
+            "delta": -0.1
+          }
+        ],
+        "opacity_flags": [
+          "DEIXIS"
+        ],
+        "reading": "EXTRACTED",
+        "standing": "record",
+        "derivation_method": "herald:iso_date",
+        "extractor": "iso_date",
+        "source_id": "inv-1",
+        "source_hash": "cf8f69d25cd0c9e6304ebbcb5a517f5cb465e4db74d4ea9021ff61195b7c003f",
+        "content_hash": "10b7efa6517f2419eddd7b613d480242ed170a6ff62ac4278a8a7ae674c2b209",
+        "authority": "ADVISORY"
+      }
+    ],
+    "refused": [
+      {
+        "claim_id": "clm-86c815931dec",
+        "kind": "amount",
+        "raw": "$1,250.00 ",
+        "span": [
+          79,
+          89
+        ],
+        "segment": null,
+        "bundle_id": "s2",
+        "confidence": 0.65,
+        "verdict": "REFUSED_PENDING_HUMAN",
+        "reason": "confidence 0.65 below threshold 0.75 (opacity: HEDGE); requires named human confirmation",
+        "opacity_flags": [
+          "HEDGE"
+        ]
+      }
+    ],
+    "bundles": {
+      "s1": [
+        "clm-14fb99bfb70c"
+      ]
+    },
+    "summary": {
+      "source_id": "inv-1",
+      "admitted": 1,
+      "refused": 1,
+      "refused_by_verdict": {
+        "REFUSED_PENDING_HUMAN": 1
+      },
+      "refused_by_opacity_flag": {
+        "HEDGE": 1
+      },
+      "total": 2,
+      "bundles": 1,
+      "standing": "record",
+      "standing_declared": true
+    },
+    "export_mac": "c25e7abd3605fc539d07be7f81832bbfed56fbc30e20a80b98ba039f7d054eb3",
+    "export_mac_version": "1"
+  }
+}
