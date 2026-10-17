@@ -47,4 +47,12 @@ Validation can fail a package. Empty statement → `ValueError`. `routing_not_ex
 observe-perceive tie_governance_adapter (opt)
 ```
 
+## 8. Optional CNS Connection
+
+TIE does not need CNS. It has no runtime dependency, nothing in the package imports CNS when it loads, and `tests/test_cns_independence.py` checks this with CNS blocked. `src/tie/cns_connector.py` is the one place that knows CNS exists. Install it with `pip install 'tie-transcript-intelligence-engine[cns]'`; without CNS, asking for a digest raises `CnsNotInstalled` and nothing else changes.
+
+**What is bound.** A `TIEPackage` (`package_content`, `package_digest`) or a `TypedHandoff` (`handoff_content`, `handoff_digest`), as plain deterministic data: the package id, the source (id, media type, title, provenance, and a SHA-256 and length of the transcript instead of the transcript), every coverage segment with its status and checksum, all evidence, artifacts, identity references and relationships, the reconstruction, the validation result, the knowledge views, the handoff, the routing signal and the build classification. `binds(result, obj)` says whether a `cns.gate.GateResult` was issued against exactly that output, using the subject labels `tie.package` and `tie.handoff`. A verdict about one package does not bind to another, nor to a package whose coverage says a different part of the source was read.
+
+**Binding only, and why.** There is no gate, verdict mapping or chain here. TIE preserves before it interprets and does not judge, and its handoff stays data, not execution. Whether a package is good enough for anything is for the repository that issues the verdict. This only lets that verdict be checked against the package it was about.
+
 Apache-2.0. Read `BUILD_STATUS.md` before `README` ambition pages.

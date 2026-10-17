@@ -1,0 +1,56 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package with the test extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+
+      - name: Run the test suite without CNS
+        run: python -m pytest tests/ -q -rs
+
+  cns:
+    # The optional CNS connector (tie.cns_connector), with the extra installed. TIE_REQUIRE_CNS=1 turns a
+    # missing cns into a failure, so these tests cannot silently skip here.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package with the cns extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[cns]"
+          python -m pip install pytest
+
+      - name: Run the test suite with CNS present
+        env:
+          TIE_REQUIRE_CNS: "1"
+        run: python -m pytest tests/ -q -rs
