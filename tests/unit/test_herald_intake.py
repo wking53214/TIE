@@ -94,6 +94,8 @@ def _signed_off(who="alice@example.com", value="2026-11-01"):
     entry = export["admitted"][0]
     entry["reading"] = SIGNOFF_READING
     entry["confirmed_by"] = who
+    entry["confirmation_rationale"] = "checked against the paper invoice"
+    entry["confirmed_at"] = "2026-10-29T12:00:00+00:00"
     entry["value"] = value
     return export
 
@@ -134,6 +136,21 @@ def test_a_signoff_that_names_no_one_is_refused_not_skipped():
         export["admitted"][0]["confirmed_by"] = who
         with pytest.raises(HeraldIntakeRefused, match="names no one"):
             signoffs_from_herald_export(_source(), export, verify=_accept)
+
+
+@pytest.mark.parametrize("field,why", [("confirmation_rationale", "gives no reason"), ("confirmed_at", "gives no time")])
+@pytest.mark.parametrize("bad", [None, "", "  "])
+def test_a_signoff_with_no_reason_or_no_time_is_refused_not_skipped(field, why, bad):
+    export = _signed_off()
+    export["admitted"][0][field] = bad
+    with pytest.raises(HeraldIntakeRefused, match=why):
+        signoffs_from_herald_export(_source(), export, verify=_accept)
+
+
+def test_the_reason_and_the_time_are_recorded_on_the_evidence():
+    record = signoffs_from_herald_export(_source(), _signed_off(), verify=_accept)[0]
+    assert "confirmed_because: checked against the paper invoice" in record.notes
+    assert "confirmed_at: 2026-10-29T12:00:00+00:00" in record.notes
 
 
 def test_a_signoff_missing_the_confirmer_key_is_refused():
