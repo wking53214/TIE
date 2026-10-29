@@ -142,8 +142,10 @@ def signoffs_from_herald_export(
     person reviewed and accepted machine output) and its notes carry the confirmer, the confirmed value and
     HERALD's claim ID. Its ID starts with ``signoff-``, so it can never be taken for a machine reading.
 
-    A claim marked HUMAN_CONFIRMED that names no one is refused, not skipped: a sign-off nobody signed is not
-    evidence of anything, and dropping it quietly is how a confirmation gets lost.
+    Each record also carries why they confirmed it and when (HERALD's rationale and confirmation time). A claim
+    marked HUMAN_CONFIRMED that names no one, gives no reason or gives no time is refused, not skipped: a sign-off
+    nobody signed, or one with nothing behind it, is not evidence of anything, and dropping it quietly is how a
+    confirmation gets lost.
     """
     expected_hash, entries = _verified_entries(source, export, verify)
     records: List[EvidenceRecord] = []
@@ -155,6 +157,10 @@ def signoffs_from_herald_export(
             raise HeraldIntakeRefused(
                 f"claim {entry.get('claim_id')!r} is marked human-confirmed but names no one who confirmed it"
             )
+        for field, label in (("confirmation_rationale", "gives no reason"), ("confirmed_at", "gives no time")):
+            value = entry.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise HeraldIntakeRefused(f"claim {entry.get('claim_id')!r} is human-confirmed but {label} for it")
         record = evidence_from_statement(
             source,
             evidence_id=_signoff_id(expected_hash, entry, who),
@@ -165,6 +171,8 @@ def signoffs_from_herald_export(
         notes = (
             f"confirmed_by: {who}",
             "confirmed_value: " + json.dumps(entry.get("value"), sort_keys=True, ensure_ascii=False),
+            f"confirmed_because: {entry['confirmation_rationale']}",
+            f"confirmed_at: {entry['confirmed_at']}",
             f"herald_claim_id: {entry.get('claim_id')}",
         )
         records.append(dataclasses.replace(
