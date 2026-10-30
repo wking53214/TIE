@@ -28,9 +28,22 @@ Does not extract from transcripts, talk to a model, persist, implement the Trans
 
 ## 4. Brutally Honest Current Status & Gaps
 
-Commercial: **FEATURE; suite too thin** (integration happy path; BUILD_STATUS historically `9 passed in 0.09s`). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. GEMS `require_tie_adapter()` **raises** `TIEIntegrationMissing`.
+Commercial: **FEATURE; suite thin for what it claims** (it began as an integration happy path, historically `9 passed in 0.09s`; see the counts below). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. GEMS `require_tie_adapter()` **raises** `TIEIntegrationMissing`.
 
 Zero runtime deps. Python ≥ 3.11.
+
+### Release and test status
+
+Measured 2026-10-30 at main `09d9b2a`.
+
+| What | State |
+|---|---|
+| Version | 0.1.0 (`pyproject.toml`) |
+| Tag and GitHub Release | None yet. Tagging is the owner's decision. |
+| CI on main | Green (tests on Python 3.11, 3.12 and 3.13, with and without CNS) |
+| Tests | 61 passed and 1 skipped without CNS, 182 passed with the `cns` extra installed |
+| Lint | `ruff check .` reports 32 findings (mostly star imports in `src/tie/__init__.py`). CI does not run ruff, so none of them is red anywhere. |
+| CNS pin | The optional `cns` extra is pinned to the tag v2.2.0, the same as the rest of the spine |
 
 ## 5. Core Invariants & Guarantees
 
@@ -46,6 +59,12 @@ Validation can fail a package. Empty statement → `ValueError`. `routing_not_ex
 (missing TE Gem) → TIE types → GEMS (unwired, raises) / Resume_OS (conceptual)
 observe-perceive tie_governance_adapter (opt)
 ```
+
+### Place in the evidence spine
+
+The evidence spine is the five repositories a document passes through in order: HERALD reads it and extracts claims, TIE records the evidence, Conservation_Kernel decides whether a root may be admitted, Governance_Gateway judges the admission door, and CCC takes the document into its store. CNS holds the roster that makes the decision, the check that every seat judged the same document, and the one-use guard that lets an approved decision open only the door it judged. `chains/evidence_spine.py` in CNS runs all of it end to end. Measured 2026-10-30 with every repository at main: 30 results, all ok, and exactly one recorded GAP (a kernel built without its guard and called directly), which the script asserts as a stated fact and never skips.
+
+TIE is the second hop. It records evidence from statements the caller supplies and writes no records of its own: it persists nothing and has no ledger, so it has no write permission to gate. Its package and handoff can be bound to a CNS verdict (section 8), so a verdict can be checked against the exact package it was about.
 
 ## 8. Optional CNS Connection
 
