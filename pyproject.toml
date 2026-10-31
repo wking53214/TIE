@@ -15,7 +15,7 @@ dependencies = []
 [project.optional-dependencies]
 test = ["pytest>=8"]
 # Optional: lets a TIE package or handoff be named for a CNS verdict (tie.cns_connector). Nothing in TIE imports CNS otherwise.
-cns = ["cns @ git+https://github.com/wking53214/CNS.git@v2.2.0"]
+cns = ["cns @ git+https://github.com/wking53214/CNS.git@v2.3.0"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

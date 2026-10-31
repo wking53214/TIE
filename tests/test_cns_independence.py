@@ -96,4 +96,4 @@ def test_no_module_of_the_package_imports_cns_by_statement():
 def test_the_package_declares_no_runtime_dependency_and_pins_the_cns_extra():
     meta = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     assert meta["dependencies"] == []
-    assert meta["optional-dependencies"]["cns"] == ["cns @ git+https://github.com/wking53214/CNS.git@v2.2.0"]
+    assert meta["optional-dependencies"]["cns"] == ["cns @ git+https://github.com/wking53214/CNS.git@v2.3.0"]
