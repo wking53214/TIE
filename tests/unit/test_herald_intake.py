@@ -55,6 +55,13 @@ def test_the_real_herald_export_is_accepted_by_its_pinned_key():
     assert len(records) == len(EXPORT["admitted"]) == 1
 
 
+def test_each_machine_record_names_the_source_hash_tie_verified_it_against():
+    import hashlib
+
+    [record] = evidence_from_herald_export(_source(), EXPORT, trusted_keys=FIXTURE_TRUSTED)
+    assert f"source_sha256: {hashlib.sha256(TEXT.encode('utf-8')).hexdigest()}" in record.notes
+
+
 def test_refuses_without_trusted_keys():
     with pytest.raises(HeraldIntakeRefused, match="no trusted HERALD export keys"):
         evidence_from_herald_export(_source(), EXPORT, trusted_keys={})

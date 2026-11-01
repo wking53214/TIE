@@ -154,15 +154,16 @@ def evidence_from_herald_export(
             # A person's sign-off, or an unknown reading: not evidence this path takes.
             continue
         statement = f"{entry['kind']}: {entry['raw']}"
-        records.append(
-            evidence_from_statement(
-                source,
-                evidence_id=_evidence_id(expected_hash, entry),
-                statement=statement,
-                epistemic_status=EpistemicStatus.INFERRED,
-                segment_id=entry.get("segment"),
-            )
+        record = evidence_from_statement(
+            source,
+            evidence_id=_evidence_id(expected_hash, entry),
+            statement=statement,
+            epistemic_status=EpistemicStatus.INFERRED,
+            segment_id=entry.get("segment"),
         )
+        # The source text hash TIE verified this claim against, recorded by TIE: a consumer that checks where a record
+        # came from reads it here, not from anything the caller says about the text.
+        records.append(dataclasses.replace(record, notes=(*record.notes, f"source_sha256: {expected_hash}")))
     return records
 
 
