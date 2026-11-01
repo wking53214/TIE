@@ -14,9 +14,11 @@ Rules, all fail closed:
   reading is left out of both.
 - Evidence IDs are derived from the claim's source hash, kind, span and text,
   so re-ingesting the same export produces the same IDs instead of duplicates.
-- The HERALD export must pass a verifier the caller supplies. Without one,
-  intake refuses. HERALD's export MAC is keyed to its own process, so a
-  consumer in another process cannot check it alone.
+- The HERALD export must be SIGNED (version 3, Ed25519) by a key in
+  ``trusted_keys``, which the caller pins. TIE checks the signature itself;
+  it does not accept a verifier function from the caller, because a caller
+  supplied verifier is only as honest as the caller. Unsigned (version 1 or 2)
+  exports are refused: their proof lives in the producing process only.
 - Every admitted claim must match the source text by hash. A claim read from
   different text is refused.
 
@@ -28,13 +30,19 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
-from typing import Any, Callable, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from tie.evidence.extract import evidence_from_statement
 from tie.models import EpistemicStatus, EvidenceRecord, OriginKind, SourceRecord
 
 __all__ = ["HeraldIntakeRefused", "evidence_from_herald_export", "signoffs_from_herald_export",
            "MACHINE_READINGS", "SIGNOFF_READING"]
+
+#: The one HERALD export format TIE accepts: an Ed25519 signature by a pinned key (HERALD's version 3).
+EXPORT_SIGNATURE_VERSION = "3"
 
 #: HERALD readings that are machine output. HUMAN_CONFIRMED is absent on purpose.
 MACHINE_READINGS = frozenset({"EXTRACTED", "INFERRED"})
@@ -62,20 +70,60 @@ def _evidence_id(source_hash: str, entry: Mapping[str, Any]) -> str:
     return "herald-" + hashlib.sha256(key.encode("utf-8")).hexdigest()[:24]
 
 
+def export_key_id(public_key: Ed25519PublicKey) -> str:
+    """The label HERALD names its export key by. Must match herald.handoff.export_key_id exactly."""
+    from cryptography.hazmat.primitives import serialization
+
+    raw = public_key.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    return "ed25519-" + hashlib.sha256(raw).hexdigest()[:16]
+
+
+def export_signing_bytes(export: Mapping[str, Any]) -> bytes:
+    """The exact bytes HERALD's version 3 signature covers.
+
+    Must match herald.handoff._signature_input byte for byte. The shared vector is in tests/unit/test_herald_intake.py
+    and the same vector is asserted in HERALD's Tests/test_export_signature.py, so a drift on either side is a red test.
+    """
+    payload = {
+        "export_mac_version": EXPORT_SIGNATURE_VERSION,
+        "document": export.get("document") or {},
+        "herald": export.get("herald") or {},
+        "admitted": export.get("admitted") or [],
+        "refused": export.get("refused") or [],
+        "key_id": export.get("key_id"),
+    }
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+
+
+def _check_signature(export: Mapping[str, Any], trusted_keys: Mapping[str, Ed25519PublicKey]) -> None:
+    if export.get("export_mac_version") != EXPORT_SIGNATURE_VERSION:
+        raise HeraldIntakeRefused(
+            "only signed HERALD exports (version 3) are accepted; an unsigned or in-process export is refused"
+        )
+    key_id = export.get("key_id")
+    key = trusted_keys.get(key_id) if isinstance(key_id, str) else None
+    if key is None:
+        raise HeraldIntakeRefused(f"HERALD export was signed with key {key_id!r}, which is not trusted here")
+    claimed = export.get("export_mac")
+    if not isinstance(claimed, str):
+        raise HeraldIntakeRefused("HERALD export has no signature")
+    try:
+        key.verify(bytes.fromhex(claimed), export_signing_bytes(export))
+    except (InvalidSignature, ValueError) as exc:
+        raise HeraldIntakeRefused(f"HERALD export did not verify: signature does not match ({type(exc).__name__})") from exc
+
+
 def _verified_entries(
     source: SourceRecord,
     export: Mapping[str, Any],
-    verify: Optional[Callable[[Mapping[str, Any]], None]],
+    trusted_keys: Optional[Mapping[str, Ed25519PublicKey]],
 ) -> tuple:
     """The admitted entries of a verified export, each checked against the source text. Raises on any failure."""
-    if verify is None:
+    if not trusted_keys:
         raise HeraldIntakeRefused(
-            "no export verifier supplied; refusing unverified HERALD output"
+            "no trusted HERALD export keys supplied; refusing unverified HERALD output"
         )
-    try:
-        verify(export)
-    except Exception as exc:  # any failure to verify is a refusal
-        raise HeraldIntakeRefused(f"HERALD export did not verify: {exc}") from exc
+    _check_signature(export, trusted_keys)
 
     expected_hash = _text_hash(source.content)
     entries = tuple(export.get("admitted", []))
@@ -92,14 +140,14 @@ def evidence_from_herald_export(
     source: SourceRecord,
     export: Mapping[str, Any],
     *,
-    verify: Optional[Callable[[Mapping[str, Any]], None]] = None,
+    trusted_keys: Mapping[str, Ed25519PublicKey],
 ) -> List[EvidenceRecord]:
     """Turn the admitted claims of a HERALD export into TIE evidence records.
 
-    ``verify`` is called with the export and must raise if it is not genuine.
-    Pass HERALD's own ``verify_export`` from the process that issued it.
+    ``trusted_keys`` maps HERALD export key IDs to the Ed25519 public keys the caller pins. The export must be
+    signed by one of them (see the module docstring). The caller never supplies a verifier function.
     """
-    expected_hash, entries = _verified_entries(source, export, verify)
+    expected_hash, entries = _verified_entries(source, export, trusted_keys)
     records: List[EvidenceRecord] = []
     for entry in entries:
         if entry.get("reading") not in MACHINE_READINGS:
@@ -133,7 +181,7 @@ def signoffs_from_herald_export(
     source: SourceRecord,
     export: Mapping[str, Any],
     *,
-    verify: Optional[Callable[[Mapping[str, Any]], None]] = None,
+    trusted_keys: Mapping[str, Ed25519PublicKey],
 ) -> List[EvidenceRecord]:
     """Turn the claims a named person confirmed at HERALD into TIE evidence, apart from machine readings.
 
@@ -147,7 +195,7 @@ def signoffs_from_herald_export(
     nobody signed, or one with nothing behind it, is not evidence of anything, and dropping it quietly is how a
     confirmation gets lost.
     """
-    expected_hash, entries = _verified_entries(source, export, verify)
+    expected_hash, entries = _verified_entries(source, export, trusted_keys)
     records: List[EvidenceRecord] = []
     for entry in entries:
         if entry.get("reading") != SIGNOFF_READING:
