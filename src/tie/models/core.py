@@ -116,6 +116,13 @@ class EvidenceRecord:
     relationship_ids: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
 
+    @property
+    def statement_sha256(self) -> str:
+        """SHA-256 of the statement's UTF-8 text. A consumer that cites this record binds a claim to this digest."""
+        import hashlib
+
+        return hashlib.sha256(self.statement.encode("utf-8")).hexdigest()
+
 
 @dataclass(frozen=True)
 class Artifact:

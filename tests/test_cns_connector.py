@@ -24,12 +24,16 @@ from tie import (  # noqa: E402
 from tie.cns_connector import (  # noqa: E402
     HANDOFF_SUBJECT, PACKAGE_SUBJECT, binds, handoff_content, handoff_digest, package_content, package_digest,
 )
-from tie.evidence.herald_intake import evidence_from_herald_export  # noqa: E402
+from tie.evidence.herald_intake import evidence_from_herald_export, export_key_id  # noqa: E402
+from cryptography.hazmat.primitives import serialization  # noqa: E402
+
 from tie.models import TIEPackage, TypedHandoff  # noqa: E402
 
 FIXTURE = json.loads((Path(__file__).resolve().parent / "fixtures" / "herald_export.json").read_text())
 TEXT = FIXTURE["text"]
 EXPORT = FIXTURE["export"]
+_PUB = serialization.load_pem_public_key(FIXTURE["public_key_pem"].encode())
+PINNED = {export_key_id(_PUB): _PUB}
 
 TRANSCRIPT = "Ana: We ship on Friday.\nBo: I think the date may slip.\nAna: Then we tell the client."
 PLAIN = (str, int, float, bool, type(None))
@@ -418,7 +422,7 @@ def test_binding_does_not_depend_on_the_verdict(outcome):
 def test_a_package_built_by_the_real_pipeline_from_a_herald_export_binds():
     source = create_source("inv-1", TEXT, provenance=Provenance(origin=OriginKind.HUMAN))
     coverage = segment_source(source, max_chars=40)
-    evidence = tuple(evidence_from_herald_export(source, EXPORT, verify=lambda _export: None))
+    evidence = tuple(evidence_from_herald_export(source, EXPORT, trusted_keys=PINNED))
     assert evidence and all(isinstance(e, EvidenceRecord) for e in evidence)
     reconstruction = reconstruct_summary(reconstruction_id="r-1", evidence=evidence, provenance=source.provenance)
     package = build_package(package_id="pkg-inv", source=source, coverage=coverage, evidence=evidence,

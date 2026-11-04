@@ -93,7 +93,9 @@ def test_no_module_of_the_package_imports_cns_by_statement():
     assert offenders == {}
 
 
-def test_the_package_declares_no_runtime_dependency_and_pins_the_cns_extra():
+def test_the_package_declares_only_cryptography_at_runtime_and_pins_the_cns_extra():
     meta = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    assert meta["dependencies"] == []
+    # cryptography verifies HERALD's Ed25519 export signatures in TIE itself (no caller-supplied verifier). It is the
+    # only runtime dependency; nothing else may be added without changing this assertion deliberately.
+    assert meta["dependencies"] == ["cryptography>=42"]
     assert meta["optional-dependencies"]["cns"] == ["cns @ git+https://github.com/wking53214/CNS.git@v2.3.0"]

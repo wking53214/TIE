@@ -93,7 +93,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 
 | Repository | Relationship to TIE |
 |---|---|
-| [HERALD](https://github.com/wking53214/HERALD) | Upstream. TIE imports nothing from HERALD and reads its export by key (`herald_intake.py` docstring; the CNS script passes HERALD's `verify_export`). TIE cannot check HERALD's export MAC itself (it is keyed to HERALD's process), so the caller must pass HERALD's `verify_export`. |
+| [HERALD](https://github.com/wking53214/HERALD) | Upstream. TIE imports nothing from HERALD. It takes HERALD's version 3 export (an Ed25519 signature) and verifies it itself against the public keys the caller pins (`trusted_keys`). It does not accept a verifier function from the caller. |
 | [Conservation_Kernel](https://github.com/wking53214/Conservation_Kernel) | Downstream in the spine. The CNS spine script's docstring states that no repository ships the step from TIE evidence to a kernel root; the script writes that step itself and builds the kernel with an evidence guard (`tie_evidence_guard`) that accepts only records TIE produced. Kernel source not checked. |
 | [Governance_Gateway](https://github.com/wking53214/Governance_Gateway), [CCC](https://github.com/wking53214/CCC), [CCCb](https://github.com/wking53214/CCCb) | Further downstream in the spine per the CNS script. TIE has no code that touches them. Their source was not checked. |
 | [CNS](https://github.com/wking53214/CNS) | Shared-contract foundation. Holds shapes, not decisions. See the CNS interaction below. |
@@ -124,7 +124,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
 - The `routing_not_execution` check in `validate_package` is hardcoded `True` (`src/tie/validation/validate.py:40`) and cannot fail.
-- Without a caller-supplied verifier, intake refuses; with a permissive verifier it accepts anything, so the safety of intake rests on the verifier the caller passes.
+- Intake refuses unless the export is a version 3 HERALD export signed by a key in `trusted_keys`. The caller pins the keys; TIE checks the signature itself. A version 2 export (in-process HMAC) is refused, because only the producing process could check it.
 - No persistence, no ledger, no key handling, no transport.
 
 ## 8. Optional CNS Connection
