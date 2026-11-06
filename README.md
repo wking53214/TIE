@@ -44,7 +44,7 @@ Measured 2026-10-31 at main `f5551d9`.
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
 | CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. CI status was not re-checked for this revision. |
-| Tests | `python -m pytest tests -q`: 182 passed with CNS importable (local run, Python 3.13). With `cns` blocked from import: 61 passed, 1 skipped (the CNS connector tests skip as a module). |
+| Tests | `python -m pytest tests -q`: 188 passed with CNS importable (local run, Python 3.13, 2026-11-06, main `1c70a62`). With `cns` blocked from import: 67 passed, 1 skipped (the CNS connector tests skip as a module). |
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
 
@@ -120,7 +120,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
 **Maturity and limitations (measured 2026-10-31, main `f5551d9`).**
-- 182 tests pass with CNS importable; 61 pass and 1 skips without it. Zero runtime dependencies.
+- 188 tests pass with CNS importable; 67 pass and 1 skips without it (measured 2026-11-06, main `1c70a62`). Zero runtime dependencies.
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
 - The `routing_not_execution` check in `validate_package` is hardcoded `True` (`src/tie/validation/validate.py:40`) and cannot fail.
