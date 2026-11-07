@@ -114,7 +114,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 **Does not own.** Whether a claim is true (HERALD judges the document and each claim; TIE records). Permission or admission of anything (Conservation_Kernel, Governance_Gateway and CCC judge their own doors; the receiver's own policy permits). HERALD's signature or key (the caller supplies the verifier). Persistence or a ledger (TIE writes nothing). Transcript extraction (no NLP, no model). Any CNS verdict: TIE can be named in one but never issues one.
 
 **CNS interaction: PARTIAL.**
-- Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py:77-86` (lazy `importlib` of `cns.gate`), `:163-172` (`subject_digest`), `:175-192` (`binds`). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
+- Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py` (lazy `importlib` of `cns.gate`, the `subject_digest` function, and the `binds` function). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
 - Implemented, CNS side: CNS's spine script imports TIE's intake (`herald_intake` in `chains/evidence_spine.py` in the CNS repo, and calls into it at several points; checked 2026-11-07 by reading the source, not by running it). That is CNS using TIE, not TIE using CNS.
 - Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
@@ -123,7 +123,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - 188 tests pass with CNS importable; 67 pass and 1 skips without it (measured 2026-11-06, main `4fa7d9f`). One runtime dependency (`cryptography`).
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
-- The `routing_not_execution` check in `validate_package` is hardcoded `True` (`src/tie/validation/validate.py:40`) and cannot fail.
+- The `routing_not_execution` check in `validate_package` is hardcoded `True` (in `src/tie/validation/validate.py`) and cannot fail.
 - Intake refuses unless the export is a version 3 HERALD export signed by a key in `trusted_keys`. The caller pins the keys; TIE checks the signature itself. A version 2 export (in-process HMAC) is refused, because only the producing process could check it.
 - No persistence, no ledger, no key handling, no transport.
 
