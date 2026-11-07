@@ -31,7 +31,7 @@ Does not extract from transcripts, talk to a model, persist, implement the Trans
 
 ## 4. Brutally Honest Current Status & Gaps
 
-Commercial: **FEATURE; suite thin for what it claims** (it began as an integration happy path, historically `9 passed in 0.09s`; see the counts below). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. GEMS `require_tie_adapter()` **raises** `TIEIntegrationMissing`.
+Commercial: **FEATURE; suite thin for what it claims** (it began as an integration happy path, historically `9 passed in 0.09s`; see the counts below). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. GEMS's older `require_tie_adapter()` slot **raises** `TIEIntegrationMissing`, but GEMS has a separate TIE package source adapter (see section 7).
 
 One runtime dependency: `cryptography`, used for the HERALD signature check. The CNS connector is optional. Python ≥ 3.11.
 
@@ -59,7 +59,7 @@ Validation can fail a package. Empty statement → `ValueError`. `routing_not_ex
 ## 7. Stack Integration Topology
 
 ```text
-(missing TE Gem) → TIE types → GEMS (unwired, raises) / Resume_OS (conceptual)
+(missing TE Gem) → TIE types → GEMS (older slot raises; `TIEPackageSource` adapter exists) / Resume_OS (conceptual)
 observe-perceive tie_governance_adapter (opt)
 ```
 
@@ -98,7 +98,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 | [Governance_Gateway](https://github.com/wking53214/Governance_Gateway), [CCC](https://github.com/wking53214/CCC), [CCCb](https://github.com/wking53214/CCCb) | Further downstream in the spine per the CNS script. TIE has no code that touches them. Their source was not checked. |
 | [CNS](https://github.com/wking53214/CNS) | Shared-contract foundation. Holds shapes, not decisions. See the CNS interaction below. |
 | [Link](https://github.com/wking53214/Link) | Not referenced by TIE source. No relationship established (Link's own source not checked). |
-| [GEMS](https://github.com/wking53214/GEMS), [observe-perceive](https://github.com/wking53214/observe-perceive) | Older conceptual consumers (see section 7). GEMS `require_tie_adapter()` raises, so that link is unwired. |
+| [GEMS](https://github.com/wking53214/GEMS), [observe-perceive](https://github.com/wking53214/observe-perceive) | GEMS: the older `require_tie_adapter()` slot raises, but GEMS has a separate `TIEPackageSource` adapter that turns a TIE package into a GEMS artifact (checked in the GEMS repo, 2026-11-06, with tests there). observe-perceive: optional adapter, not checked in this revision. |
 
 ```text
 HERALD ──signed export──▶ TIE ──evidence records──▶ (caller-written step) ──▶ Conservation_Kernel ─▶ Governance_Gateway ─▶ CCC
