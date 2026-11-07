@@ -16,8 +16,9 @@ Five user-supplied TIE forensic summaries reconciled as one corpus.
 
 ## Actual execution
 
-The reconstructed test suite executed successfully:
+Measured 2026-11-06 at main `f3ac591`:
 
-`9 passed in 0.09s`
+- With the CNS package installed (pinned to v2.3.0): `188 passed`.
+- Without it: `67 passed, 1 skipped` (the CNS connector tests skip).
 
-These are newly executed tests for this reconstructed implementation. They are not historical TIE test results.
+These are measurements of this reconstructed implementation. They are not historical TIE test results. An earlier run recorded 9 tests.
