@@ -52,7 +52,7 @@ Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measur
 
 The check lives in the CNS repository, not this one. To run it:
 
-1. Check out the CNS repository, and check out HERALD, TIE, Conservation_Kernel, Governance_Gateway and ccc in the same parent folder as siblings of each other.
+1. Check out the CNS repository, and check out HERALD, TIE, Conservation_Kernel, Governance_Gateway and ccc into one shared parent folder, next to CNS.
 2. Install the `cryptography` package for Python 3.11 or newer. Installing TIE's optional CNS extra is not needed for this check.
 3. Put the CNS folder and each sibling's source folder on the Python path, then run the spine script from the CNS folder.
 4. A clean run lists 52 scenarios, 3 of them marked as gaps (the seams nothing checks yet), and exits with no failures.
