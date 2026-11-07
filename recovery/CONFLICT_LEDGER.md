@@ -10,9 +10,9 @@ Status: reconciled as different architectural layers where compatible; exact his
 
 ## Transcript Extraction Gem boundary
 
-**Status: RESOLVED**
+**Status: SPECIFIED, NOT IMPLEMENTED** (the boundary is written down; the TE Gem is not in this repository).
 
-The Transcript Extraction Gem provides first-pass extraction from conversational transcripts. The boundary is now formally defined in `docs/ARCHITECTURE.md`:
+The Transcript Extraction Gem provides first-pass extraction from conversational transcripts. The boundary is now specified in `docs/ARCHITECTURE.md`:
 
 - **TE Gem upstream responsibility:** Extract from transcripts, preserve EXPLICIT/INFERRED/UNCERTAIN distinctions, build terminology, produce SOURCE representation
 - **TIE downstream responsibility:** Consume SOURCE, apply full preservation pipeline from COVERAGE through ROUTING
