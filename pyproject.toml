@@ -13,7 +13,7 @@ authors = [{ name = "William N. King" }]
 dependencies = ["cryptography>=42"]
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "jsonschema>=4"]
 # Optional: lets a TIE package or handoff be named for a CNS verdict (tie.cns_connector). Nothing in TIE imports CNS otherwise.
 cns = ["cns @ git+https://github.com/wking53214/CNS.git@v2.3.0"]
 
