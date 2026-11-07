@@ -4,7 +4,7 @@ This build uses five user-supplied forensic summaries as its evidence corpus.
 
 No summary is treated as authoritative solely because it appears later in the conversation. Common architecture was reconciled; historical differences and uncertainty are retained.
 
-### Status taxonomy used
+### Status taxonomy (eight terms; the code uses only RECONSTRUCTED, IMPLEMENTED_FROM_RECOVERED_SPEC, CONFLICTED and UNKNOWN)
 
 - RECOVERED
 - PARTIALLY_RECOVERED
