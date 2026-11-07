@@ -48,6 +48,17 @@ Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measur
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 69 findings, 43 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
 
+### Running the spine check (from CNS)
+
+The check lives in the CNS repository, not this one. To run it:
+
+1. Check out the CNS repository, and check out HERALD, TIE, Conservation_Kernel, Governance_Gateway and ccc in the same parent folder as siblings of each other.
+2. Install the `cryptography` package for Python 3.11 or newer. Installing TIE's optional CNS extra is not needed for this check.
+3. Put the CNS folder and each sibling's source folder on the Python path, then run the spine script from the CNS folder.
+4. A clean run lists 52 scenarios, 3 of them marked as gaps (the seams nothing checks yet), and exits with no failures.
+
+Results depend on the sibling repository versions. A run on other commits may differ, and that should be recorded with the run.
+
 ## 5. Core Invariants & Guarantees
 
 Validation can fail a package. Empty statement → `ValueError`. `routing_not_execution` cannot fail (always True). Segment checksums exist. No ledger.
@@ -89,7 +100,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 | In | A source string (`create_source`), caller-supplied statements, or a HERALD export mapping plus the pinned public keys (`trusted_keys`) that verify it |
 | Out | `EvidenceRecord` lists, `TIEPackage`, `TypedHandoff` (frozen dataclasses, JSON schema in `schemas/`), and optionally a plain-data content dict and digest for CNS binding |
 
-**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) was checked on 2026-11-07 by reading its source for where it imports TIE and calls into it. The script was not run. The sibling repositories below, except GEMS and observe-perceive, were not checked. Rows marked "not checked" were not verified against the sibling repository's source.
+**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) was checked on 2026-11-07 by reading its source for where it imports TIE and calls into it. On 2026-11-07 the script was run once, from a CNS checkout, and printed 52 scenarios with 3 recorded gaps and no failures. That run used each sibling repository's default branch, not the commits the CI workflow pins. The sibling repositories below, except GEMS and observe-perceive, were not checked. Rows marked "not checked" were not verified against the sibling repository's source.
 
 | Repository | Relationship to TIE |
 |---|---|
@@ -115,7 +126,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 
 **CNS interaction: PARTIAL.**
 - Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py` (lazy `importlib` of `cns.gate`, the `subject_digest` function, and the `binds` function). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
-- Implemented, CNS side: CNS's spine script imports TIE's intake (`herald_intake` in `chains/evidence_spine.py` in the CNS repo, and calls into it at several points; checked 2026-11-07 by reading the source, not by running it). That is CNS using TIE, not TIE using CNS.
+- Implemented, CNS side: CNS's spine script imports TIE's intake (`herald_intake` in `chains/evidence_spine.py` in the CNS repo, and calls into it at several points; checked 2026-11-07 by reading the source, and run once that day, see the next section). That is CNS using TIE, not TIE using CNS.
 - Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
