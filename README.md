@@ -89,7 +89,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 | In | A source string (`create_source`), caller-supplied statements, or a HERALD export mapping plus the pinned public keys (`trusted_keys`) that verify it |
 | Out | `EvidenceRecord` lists, `TIEPackage`, `TypedHandoff` (frozen dataclasses, JSON schema in `schemas/`), and optionally a plain-data content dict and digest for CNS binding |
 
-**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) was re-checked on 2026-11-07 for its TIE import and calls. The sibling repositories below, except GEMS and observe-perceive, were not checked. Rows marked "not checked" were not verified against the sibling repository's source.
+**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) was checked on 2026-11-07 by reading its source for where it imports TIE and calls into it. The script was not run. The sibling repositories below, except GEMS and observe-perceive, were not checked. Rows marked "not checked" were not verified against the sibling repository's source.
 
 | Repository | Relationship to TIE |
 |---|---|
@@ -115,7 +115,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 
 **CNS interaction: PARTIAL.**
 - Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py:77-86` (lazy `importlib` of `cns.gate`), `:163-172` (`subject_digest`), `:175-192` (`binds`). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
-- Implemented, CNS side: CNS's spine script imports TIE's intake (`chains/evidence_spine.py:178` in the CNS repo, called at `:258`, `:850` and `:1731`; checked 2026-11-07). That is CNS using TIE, not TIE using CNS.
+- Implemented, CNS side: CNS's spine script imports TIE's intake (`herald_intake` in `chains/evidence_spine.py` in the CNS repo, and calls into it at several points; checked 2026-11-07 by reading the source, not by running it). That is CNS using TIE, not TIE using CNS.
 - Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
