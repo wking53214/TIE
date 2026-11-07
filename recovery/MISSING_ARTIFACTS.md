@@ -10,6 +10,6 @@ Highest-value missing artifacts:
 6. Original tests and execution results
 7. Authoritative design-freeze record
 
-**RESOLVED ARTIFACTS:**
+**SPECIFIED ARTIFACTS (not implemented):**
 
-- **Exact TIE ↔ Transcript Extraction Gem boundary** — Formally defined in `docs/ARCHITECTURE.md` (Transcript Extraction Gem boundary section). TE Gem operates upstream on transcript extraction; TIE operates downstream on preservation and evidence traceability.
+- **Exact TIE ↔ Transcript Extraction Gem boundary** — Specified in `docs/ARCHITECTURE.md` (Transcript Extraction Gem boundary section). TE Gem operates upstream on transcript extraction; TIE operates downstream on preservation and evidence traceability.
