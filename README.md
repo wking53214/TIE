@@ -89,7 +89,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 | In | A source string (`create_source`), caller-supplied statements, or a HERALD export mapping plus the pinned public keys (`trusted_keys`) that verify it |
 | Out | `EvidenceRecord` lists, `TIEPackage`, `TypedHandoff` (frozen dataclasses, JSON schema in `schemas/`), and optionally a plain-data content dict and digest for CNS binding |
 
-**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) and its line references, and the sibling repositories below, were not re-checked in the 2026-11-06 accuracy pass. Rows marked "not checked" were not verified against the sibling repository's source.
+**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) was re-checked on 2026-11-07 for its TIE import and calls. The sibling repositories below, except GEMS and observe-perceive, were not checked. Rows marked "not checked" were not verified against the sibling repository's source.
 
 | Repository | Relationship to TIE |
 |---|---|
@@ -98,7 +98,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 | [Governance_Gateway](https://github.com/wking53214/Governance_Gateway), [CCC](https://github.com/wking53214/CCC), [CCCb](https://github.com/wking53214/CCCb) | Further downstream in the spine per the CNS script. TIE has no code that touches them. Their source was not checked. |
 | [CNS](https://github.com/wking53214/CNS) | Shared-contract foundation. Holds shapes, not decisions. See the CNS interaction below. |
 | [Link](https://github.com/wking53214/Link) | Not referenced by TIE source. No relationship established (Link's own source not checked). |
-| [GEMS](https://github.com/wking53214/GEMS), [observe-perceive](https://github.com/wking53214/observe-perceive) | GEMS: the older `require_tie_adapter()` slot raises, but GEMS has a separate `TIEPackageSource` adapter that turns a TIE package into a GEMS artifact (checked in the GEMS repo, 2026-11-06, with tests there). observe-perceive: optional adapter, not checked in this revision. |
+| [GEMS](https://github.com/wking53214/GEMS), [observe-perceive](https://github.com/wking53214/observe-perceive) | GEMS: the older `require_tie_adapter()` slot raises, but GEMS has a separate `TIEPackageSource` adapter that turns a TIE package into a GEMS artifact (checked in the GEMS repo, 2026-11-06, with tests there). observe-perceive: optional duck-typed adapter (`tie_governance_adapter.py`); does not import TIE (checked in the hub repo, 2026-11-07). |
 
 ```text
 HERALD ──signed export──▶ TIE ──evidence records──▶ (caller-written step) ──▶ Conservation_Kernel ─▶ Governance_Gateway ─▶ CCC
@@ -115,7 +115,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 
 **CNS interaction: PARTIAL.**
 - Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py:77-86` (lazy `importlib` of `cns.gate`), `:163-172` (`subject_digest`), `:175-192` (`binds`). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
-- Implemented, CNS side: CNS's spine script imports TIE's intake (`chains/evidence_spine.py:149` in the CNS repo, called at `:201-206`). That is CNS using TIE, not TIE using CNS.
+- Implemented, CNS side: CNS's spine script imports TIE's intake (`chains/evidence_spine.py:178` in the CNS repo, called at `:258`, `:850` and `:1731`; checked 2026-11-07). That is CNS using TIE, not TIE using CNS.
 - Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
