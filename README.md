@@ -17,7 +17,7 @@ Intended stages: SOURCE → COVERAGE → EVIDENCE → ARTIFACTS → IDENTITY →
 - `create_source`: wrap a string
 - `segment_source(max_chars=4000)`: char windows + sha256; `INSPECTED` unless the caller declares otherwise: `not_inspected=[(start, end)]` marks the segments those ranges touch `NOT_INSPECTED`, and `declared_length=` (when the content is a truncated copy) records the rest as `MISSING`. TIE does not detect gaps itself; it records the ones it is told about
 - `evidence_from_statement`: caller supplies the statement (**no NLP**)
-- `evidence_from_herald_export` / `signoffs_from_herald_export` (`src/tie/evidence/herald_intake.py`): turn the admitted claims of a HERALD export into `EvidenceRecord`s (machine readings as `INFERRED`, a named person's confirmation on its own `signoff-` path with `HUMAN_ACCEPTED_AI` provenance). Both refuse unless the caller supplies a `verify` callable that accepts the export, and refuse any claim whose `source_hash` is not the SHA-256 of the source text offered. Evidence ids are derived from source hash, kind, span and text, so replaying the same export gives the same ids. These two functions are not re-exported from `tie/__init__.py`; import them from `tie.evidence.herald_intake`
+- `evidence_from_herald_export` / `signoffs_from_herald_export` (`src/tie/evidence/herald_intake.py`): turn the admitted claims of a HERALD export into `EvidenceRecord`s (machine readings as `INFERRED`, a named person's confirmation on its own `signoff-` path with `HUMAN_ACCEPTED_AI` provenance). Both refuse unless the export is signed by a public key the caller pins in `trusted_keys` (TIE checks the signature itself; a caller cannot supply a verifier), and refuse any claim whose `source_hash` is not the SHA-256 of the source text offered. Evidence ids are derived from source hash, kind, span and text, so replaying the same export gives the same ids. These two functions are not re-exported from `tie/__init__.py`; import them from `tie.evidence.herald_intake`
 - `reconstruct_summary`: join evidence as `"- {statement}"` bullets
 - `build_package` / `validate_package`: source present, coverage id match, evidence refs, reconstruction cites evidence, `routing_not_execution=True` (**hardcoded True**)
 
@@ -33,19 +33,19 @@ Does not extract from transcripts, talk to a model, persist, implement the Trans
 
 Commercial: **FEATURE; suite thin for what it claims** (it began as an integration happy path, historically `9 passed in 0.09s`; see the counts below). Schema labeled reconstructed. Knowledge views `{}`. No TE Gem in-repo. GEMS `require_tie_adapter()` **raises** `TIEIntegrationMissing`.
 
-Zero runtime deps. Python ≥ 3.11.
+One runtime dependency: `cryptography`, used for the HERALD signature check. The CNS connector is optional. Python ≥ 3.11.
 
 ### Release and test status
 
-Measured 2026-10-31 at main `f5551d9`.
+Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measured 2026-11-06 at main `4fa7d9f`.
 
 | What | State |
 |---|---|
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
 | CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. CI status was not re-checked for this revision. |
-| Tests | `python -m pytest tests -q`: 188 passed with CNS importable (local run, Python 3.13, 2026-11-06, main `1c70a62`). With `cns` blocked from import: 67 passed, 1 skipped (the CNS connector tests skip as a module). |
-| Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
+| Tests | `python -m pytest tests -q`: 188 passed with CNS importable (local run, Python 3.13, 2026-11-06, main `4fa7d9f`, CNS v2.3.0 installed). With `cns` blocked from import: 67 passed, 1 skipped (the CNS connector tests skip as a module). |
+| Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 69 findings, 43 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
 
 ## 5. Core Invariants & Guarantees
@@ -86,10 +86,10 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 
 | Direction | What |
 |---|---|
-| In | A source string (`create_source`), caller-supplied statements, or a HERALD export mapping plus a `verify` callable |
+| In | A source string (`create_source`), caller-supplied statements, or a HERALD export mapping plus the pinned public keys (`trusted_keys`) that verify it |
 | Out | `EvidenceRecord` lists, `TIEPackage`, `TypedHandoff` (frozen dataclasses, JSON schema in `schemas/`), and optionally a plain-data content dict and digest for CNS binding |
 
-**Relationship to companions.** Verified for this revision: TIE's own source, and the CNS spine script (`chains/evidence_spine.py`) that calls TIE. Rows marked "not checked" were not verified against the sibling repository's source.
+**Relationship to companions.** Verified for this revision: TIE's own source. The CNS spine script (`chains/evidence_spine.py`) and its line references, and the sibling repositories below, were not re-checked in the 2026-11-06 accuracy pass. Rows marked "not checked" were not verified against the sibling repository's source.
 
 | Repository | Relationship to TIE |
 |---|---|
@@ -120,7 +120,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
 **Maturity and limitations (measured 2026-10-31, main `f5551d9`).**
-- 188 tests pass with CNS importable; 67 pass and 1 skips without it (measured 2026-11-06, main `1c70a62`). Zero runtime dependencies.
+- 188 tests pass with CNS importable; 67 pass and 1 skips without it (measured 2026-11-06, main `4fa7d9f`). One runtime dependency (`cryptography`).
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
 - The `routing_not_execution` check in `validate_package` is hardcoded `True` (`src/tie/validation/validate.py:40`) and cannot fail.
@@ -129,10 +129,10 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 
 ## 8. Optional CNS Connection
 
-TIE does not need CNS. It has no runtime dependency, nothing in the package imports CNS when it loads, and `tests/test_cns_independence.py` checks this with CNS blocked. `src/tie/cns_connector.py` is the one place that knows CNS exists. Install it with `pip install 'tie-transcript-intelligence-engine[cns]'`; without CNS, asking for a digest raises `CnsNotInstalled` and nothing else changes.
+TIE does not need CNS. Its only runtime dependency is `cryptography`, and nothing in the package imports CNS when it loads, and `tests/test_cns_independence.py` checks this with CNS blocked. `src/tie/cns_connector.py` is the one place that knows CNS exists. Install it with `pip install 'tie-transcript-intelligence-engine[cns]'`; without CNS, asking for a digest raises `CnsNotInstalled` and nothing else changes.
 
 **What is bound.** A `TIEPackage` (`package_content`, `package_digest`) or a `TypedHandoff` (`handoff_content`, `handoff_digest`), as plain deterministic data: the package id, the source (id, media type, title, provenance, and a SHA-256 and length of the transcript instead of the transcript), every coverage segment with its status and checksum, all evidence, artifacts, identity references and relationships, the reconstruction, the validation result, the knowledge views, the handoff, the routing signal and the build classification. `binds(result, obj)` says whether a `cns.gate.GateResult` was issued against exactly that output, using the subject labels `tie.package` and `tie.handoff`. A verdict about one package does not bind to another, nor to a package whose coverage says a different part of the source was read.
 
 **Binding only, and why.** There is no gate, verdict mapping or chain here. TIE preserves before it interprets and does not judge, and its handoff stays data, not execution. Whether a package is good enough for anything is for the repository that issues the verdict. This only lets that verdict be checked against the package it was about.
 
-Apache-2.0. Read `BUILD_STATUS.md` before `README` ambition pages.
+Apache-2.0. Read `BUILD_STATUS.md` before relying on the ambition described in the other docs.
