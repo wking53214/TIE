@@ -1,4 +1,4 @@
-TIE MASTER BUILD — FINAL EXECUTION REPORT
+TIE MASTER BUILD: FINAL EXECUTION REPORT
 VERSION: TIE-MB-1.0
 
 CORPUS
@@ -45,7 +45,7 @@ Historical exact EvidenceRecord schema: NOT RECOVERED
 Historical test results: NOT RECOVERED
 
 CREATED REPOSITORY
-/mnt/data/tie_build
+Built at /mnt/data/tie_build (a build-time location). The current repository is github.com/wking53214/TIE.
 
 CORE IMPLEMENTATION
 src/tie/models/core.py
@@ -55,11 +55,8 @@ src/tie/evidence/extract.py
 src/tie/reconstruction/reconstruct.py
 src/tie/validation/validate.py
 src/tie/package/builder.py
-src/tie/artifacts/model.py
-src/tie/identity/model.py
-src/tie/relationships/model.py
-src/tie/provenance/__init__.py
-src/tie/handoff/__init__.py
+
+RE-EXPORT STUBS (no logic of their own): src/tie/artifacts/model.py, src/tie/identity/model.py, src/tie/relationships/model.py, src/tie/provenance/__init__.py, src/tie/handoff/__init__.py
 
 DOCUMENTATION / FORENSICS
 README.md
@@ -82,8 +79,8 @@ SCHEMAS
 schemas/tie_package.reconstructed.schema.json
 
 TESTS
-9 tests executed successfully.
-Result: 9 passed in 0.09s
+Original run: 9 tests passed in 0.09s.
+Measured 2026-11-06 (see BUILD_STATUS.md): 188 passed with CNS installed; 67 passed and 1 skipped without it.
 
 These are new tests for the reconstructed implementation and are NOT historical TIE test results.
 
@@ -95,7 +92,7 @@ Epistemic state remains explicit.
 UNKNOWN remains UNKNOWN.
 CONFLICTED remains CONFLICTED.
 Coverage does not imply completeness merely because processing succeeds.
-Routing signal remains data and not execution authority.
+Routing signal remains data and not execution authority (asserted by a check that is hardcoded to pass; see docs/VALIDATION.md).
 Historical implementation is not falsely labeled as recovered.
 
 SUPERSEDED DESIGN PRESERVED
