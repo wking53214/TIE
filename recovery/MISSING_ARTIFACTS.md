@@ -12,4 +12,4 @@ Highest-value missing artifacts:
 
 **SPECIFIED ARTIFACTS (not implemented):**
 
-- **Exact TIE ↔ Transcript Extraction Gem boundary** — Specified in `docs/ARCHITECTURE.md` (Transcript Extraction Gem boundary section). TE Gem operates upstream on transcript extraction; TIE operates downstream on preservation and evidence traceability.
+- **Exact TIE ↔ Transcript Extraction Gem boundary**: Specified in `docs/ARCHITECTURE.md` (Transcript Extraction Gem boundary section). TE Gem operates upstream on transcript extraction; TIE operates downstream on preservation and evidence traceability.
