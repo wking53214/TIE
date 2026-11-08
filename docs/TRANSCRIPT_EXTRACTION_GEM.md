@@ -114,18 +114,23 @@ The TE Gem produces a **Transcript Extraction Package** containing:
 
 **TIE receives this package as its SOURCE representation.**
 
-## TIE's Role with TE Gem Extractions
+## Requirements on TIE (not implemented)
 
-TIE ensures that:
+A future TIE integration with this Gem would have to meet the following. TIE does not enforce any of them today:
 
-1. **Extracted epistemic labels survive** through RECONSTRUCTION and VALIDATION
-2. **Inferences remain labeled as inferences** even after multiple pipeline stages
-3. **Source references are traceable** from every knowledge view back to original extraction
-4. **Uncertain items remain uncertain** unless independently verified
-5. **No silent promotion** of INFERRED to FACT without evidence
-6. **No silent rewriting** of EXPLICIT items based on interpretation
+1. Extracted epistemic labels survive RECONSTRUCTION and VALIDATION.
+2. Inferences remain labeled as inferences through later stages.
+3. Source references are traceable from every knowledge view back to the original extraction.
+4. Uncertain items remain uncertain unless independently verified.
+5. No silent promotion of INFERRED to FACT without evidence.
+6. No silent rewriting of EXPLICIT items based on interpretation.
 
-The TIE pipeline preserves the TE Gem's extraction integrity while adding higher-level organization, reconstruction, and validation.
+Current state of the TIE side:
+
+- No mapping exists between this document's vocabulary (EXPLICIT, INFERRED, UNCERTAIN, plus FACT, INFERENCE, ASSUMPTION) and TIE's (EXPLICIT, INFERRED, UNKNOWN, CONFLICTED). See `docs/ARCHITECTURE.md`.
+- HERALD intake records every admitted claim as INFERRED, including human-confirmed claims.
+- Source-span text is not verified against the source (see the README's HERALD intake section).
+- No test checks any of the six requirements above.
 
 ## Quality Standards
 
