@@ -43,7 +43,7 @@ Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measur
 |---|---|
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
-| CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. The latest run on main (HEAD `42a0361`, 2026-11-08) passed all six jobs. |
+| CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. The latest run on main (HEAD `1ab4143`, run 42537187754, 2026-11-08) passed all six jobs. |
 | Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed (local run, Python 3.13, 2026-11-08, main `f3e1c54`, CNS v2.3.0 installed). Without `cns`, the count was last measured 2026-11-06 at `4fa7d9f` (67 passed, 1 skipped) and has not been re-measured since. |
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 69 findings, 43 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
