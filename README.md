@@ -43,8 +43,8 @@ Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measur
 |---|---|
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
-| CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. CI status was not re-checked for this revision. |
-| Tests | `python -m pytest tests -q`: 188 passed with CNS importable (local run, Python 3.13, 2026-11-06, main `4fa7d9f`, CNS v2.3.0 installed). With `cns` blocked from import: 67 passed, 1 skipped (the CNS connector tests skip as a module). |
+| CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. The latest run on main (HEAD `f3e1c54`, 2026-11-08) passed all six jobs. |
+| Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed (local run, Python 3.13, 2026-11-08, main `f3e1c54`, CNS v2.3.0 installed). Without `cns`, the count was last measured 2026-11-06 at `4fa7d9f` (67 passed, 1 skipped) and has not been re-measured since. |
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 69 findings, 43 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
 
@@ -86,7 +86,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 
 ## Role in the STACK spine
 
-**Purpose.** TIE is where a document's extracted claims become preserved evidence. It records what was said and where, with coverage that states which parts of the source were and were not read, and it refuses input that cannot be traced to the text it claims to come from. It does not decide whether any of it is true.
+**Purpose.** TIE is where a document's extracted claims become preserved evidence. It records each admitted claim with its source identity and available segment reference, with coverage that states which parts of the source were and were not read, and it refuses input whose source hash does not match the text offered. Exact claim-to-source offset verification and retention are not implemented. It does not decide whether any of it is true.
 
 **Responsibilities (implemented in this repo).**
 - Hold the data shapes: `SourceRecord`, `Coverage`/`CoverageSegment`, `EvidenceRecord`, `TIEPackage`, `TypedHandoff` (`src/tie/models/core.py`).
@@ -133,7 +133,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
 **Maturity and limitations (measured 2026-10-31, main `f5551d9`).**
-- 188 tests pass with CNS importable; 67 pass and 1 skips without it (measured 2026-11-06, main `4fa7d9f`). One runtime dependency (`cryptography`).
+- 195 tests pass with CNS importable (measured 2026-11-08, main `f3e1c54`). Without CNS: 67 pass and 1 skips (measured 2026-11-06, main `4fa7d9f`; not re-measured since). One runtime dependency (`cryptography`).
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
 - The `routing_not_execution` check in `validate_package` is hardcoded `True` (in `src/tie/validation/validate.py`) and cannot fail.
