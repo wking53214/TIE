@@ -82,6 +82,8 @@ The evidence spine is the five repositories a document passes through in order: 
 
 TIE is the second hop. It records evidence from statements the caller supplies or from a verified HERALD export and writes no records of its own: it persists nothing and has no ledger, so it has no write permission to gate. Its package and handoff can be bound to a CNS verdict (section 8), so a verdict can be checked against the exact package it was about.
 
+**Gate position.** TIE holds no gate position: it judges nothing and creates no CNS `GateResult`. `src/tie/cns_connector.py` only computes a digest of a package or handoff and checks (`binds`) that a verdict from some other gate was judged on exactly that content. The verdict comes from another repository's gate, so TIE is not on the ALPHA or OMEGA end of any chain.
+
 ## Role in the STACK spine
 
 **Purpose.** TIE is where a document's extracted claims become preserved evidence. It records what was said and where, with coverage that states which parts of the source were and were not read, and it refuses input that cannot be traced to the text it claims to come from. It does not decide whether any of it is true.
