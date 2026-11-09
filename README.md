@@ -43,7 +43,7 @@ Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measur
 |---|---|
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
-| CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. The latest run on main (HEAD `1ab4143`, run 42537187754, 2026-11-08) passed all six jobs. |
+| CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. This README does not name a commit as current. Each commit's CI result is on its Actions page. |
 | Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed (local run, Python 3.13, 2026-11-08, main `f3e1c54`, CNS v2.3.0 installed). Without `cns`, the count was last measured 2026-11-06 at `4fa7d9f` (67 passed, 1 skipped) and has not been re-measured since. |
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 69 findings, 43 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
@@ -124,7 +124,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 
 **Owns.** The shapes and invariants of a transcript evidence package; the rule that evidence from HERALD enters only through a verified export whose claims match the source text hash; the rule that a person's sign-off enters on its own path and is never taken for a machine reading; the digest of a TIE package or handoff.
 
-**Does not own.** Whether a claim is true (HERALD judges the document and each claim; TIE records). Permission or admission of anything (Conservation_Kernel, Governance_Gateway and CCC judge their own doors; the receiver's own policy permits). HERALD's signature or key (the caller supplies the verifier). Persistence or a ledger (TIE writes nothing). Transcript extraction (no NLP, no model). Any CNS verdict: TIE can be named in one but never issues one.
+**Does not own.** Whether a claim is true (HERALD judges the document and each claim; TIE records). Permission or admission of anything (Conservation_Kernel, Governance_Gateway and CCC judge their own doors; the receiver's own policy permits). HERALD's signing keys (the caller pins the trusted public keys; TIE verifies the signature itself). Persistence or a ledger (TIE writes nothing). Transcript extraction (no NLP, no model). Any CNS verdict: TIE can be named in one but never issues one.
 
 **CNS interaction: PARTIAL.**
 - Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py` (lazy `importlib` of `cns.gate`, the `subject_digest` function, and the `binds` function). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
