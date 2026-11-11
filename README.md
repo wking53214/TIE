@@ -4,9 +4,11 @@ Reconstructed **transcript → evidence-preserving package** baseline. Principle
 
 ## 1. Pipeline Position & Role
 
+**Where this fits.** TIE is part of ≡TACK, the whole library. It is the second of five repositories in the evidence spine, the path a document takes: HERALD, TIE, Conservation_Kernel, Governance_Gateway, CCC. In this README, "spine" always means that five-repository path, never the whole system. TIE turns HERALD's checked claims into preserved evidence and hands it on. It does not decide what is true.
+
 **SPECIALIZED INLET.** Conceptual Gem-layer 1 / source package for GEMS. Optional `tie_governance_adapter.py` in observe-perceive. Handoff is data, **not execution**.
 
-Second hop of the evidence spine (see "Role in the STACK spine" below): it takes HERALD's signed claim export in as evidence records, and refuses an export that does not verify or that was read from different text.
+Second hop of the evidence spine (see "Role in the evidence spine" below): it takes HERALD's signed claim export in as evidence records, and refuses an export that does not verify or that was read from different text.
 
 ## 2. Full System Scope & Architectural Depth
 
@@ -37,15 +39,15 @@ One runtime dependency: `cryptography`, used for the HERALD signature check. The
 
 ### Release and test status
 
-Originally measured 2026-10-31 at main `f5551d9`. Test and lint counts re-measured 2026-11-06 at main `4fa7d9f`.
+Numbers below were measured on the date and commit shown in the table.
 
 | What | State |
 |---|---|
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
 | CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. This README does not name a commit as current. Each commit's CI result is on its Actions page. |
-| Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed (local run, Python 3.13, 2026-11-08, main `f3e1c54`, CNS v2.3.0 installed). Without `cns`, the count was last measured 2026-11-06 at `4fa7d9f` (67 passed, 1 skipped) and has not been re-measured since. |
-| Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 69 findings, 43 of them auto-fixable. An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
+| Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed; 74 passed and 1 skipped without `cns`. Both are local runs on Python 3.13, 2026-11-10, main `5a0dc59`, CNS v2.3.0 for the first. |
+| Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable (measured 2026-11-10, main `5a0dc59`). An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
 
 ### Running the spine check (from CNS)
@@ -74,7 +76,7 @@ Validation can fail a package. Empty statement → `ValueError`. `routing_not_ex
 observe-perceive tie_governance_adapter (opt)
 ```
 
-The older topology above is the GEMS-side view. The spine view follows in the next section.
+The diagram above is the GEMS-side view. The spine view follows in the next section.
 
 ### Place in the evidence spine
 
@@ -84,7 +86,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 
 **Gate position.** TIE holds no gate position: it judges nothing and creates no CNS `GateResult`. `src/tie/cns_connector.py` only computes a digest of a package or handoff and checks (`binds`) that a verdict from some other gate was judged on exactly that content. The verdict comes from another repository's gate, so TIE is not on the ALPHA or OMEGA end of any chain.
 
-## Role in the STACK spine
+## Role in the evidence spine
 
 **Purpose.** TIE is where a document's extracted claims become preserved evidence. It records each admitted claim with its source identity and available segment reference, with coverage that states which parts of the source were and were not read, and it refuses input whose source hash does not match the text offered. Exact claim-to-source offset verification and retention are not implemented. It does not decide whether any of it is true.
 
@@ -108,7 +110,8 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 |---|---|
 | [HERALD](https://github.com/wking53214/HERALD) | Upstream. TIE imports nothing from HERALD. It takes HERALD's version 3 export (an Ed25519 signature) and verifies it itself against the public keys the caller pins (`trusted_keys`). It does not accept a verifier function from the caller. |
 | [Conservation_Kernel](https://github.com/wking53214/Conservation_Kernel) | Downstream in the spine. The CNS spine script's docstring states that no repository ships the step from TIE evidence to a kernel root; the script writes that step itself and builds the kernel with an evidence guard (`tie_evidence_guard`) that accepts only records TIE produced. Kernel source not checked. |
-| [Governance_Gateway](https://github.com/wking53214/Governance_Gateway), [CCC](https://github.com/wking53214/CCC), [CCCb](https://github.com/wking53214/CCCb) | Further downstream in the spine per the CNS script. TIE has no code that touches them. Their source was not checked. |
+| [Governance_Gateway](https://github.com/wking53214/Governance_Gateway) | Downstream in the spine per the CNS script. TIE has no code that touches it. Its source was not checked. |
+| [CCC](https://github.com/wking53214/CCC) | Last in the spine per the CNS script. TIE has no code that touches it. Its source was not checked. |
 | [CNS](https://github.com/wking53214/CNS) | Shared-contract foundation. Holds shapes, not decisions. See the CNS interaction below. |
 | [Link](https://github.com/wking53214/Link) | Not referenced by TIE source. No relationship established (Link's own source not checked). |
 | [GEMS](https://github.com/wking53214/GEMS), [observe-perceive](https://github.com/wking53214/observe-perceive) | GEMS: the older `require_tie_adapter()` slot raises, but GEMS has a separate `TIEPackageSource` adapter that turns a TIE package into a GEMS artifact (checked in the GEMS repo, 2026-11-06, with tests there). observe-perceive: optional duck-typed adapter (`tie_governance_adapter.py`); does not import TIE (checked in the hub repo, 2026-11-07). |
@@ -118,7 +121,7 @@ HERALD ──signed export──▶ TIE ──evidence records──▶ (caller-
  reads + extracts         records, refuses a            CNS spine script only                     (each judges its own door)
  claims                   changed or unverified export
 
-CNS (optional, one-way for TIE): tie.cns_connector ─▶ cns.gate.subject_digest / GateResult.binds
+CNS (optional; TIE's side is one-way, CNS's spine script also imports TIE): tie.cns_connector ─▶ cns.gate.subject_digest / GateResult.binds
 CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_intake
 ```
 
@@ -132,8 +135,8 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
-**Maturity and limitations (measured 2026-10-31, main `f5551d9`).**
-- 195 tests pass with CNS importable (measured 2026-11-08, main `f3e1c54`). Without CNS: 67 pass and 1 skips (measured 2026-11-06, main `4fa7d9f`; not re-measured since). One runtime dependency (`cryptography`).
+**Maturity and limitations.**
+- 195 tests pass with CNS importable. Without CNS: 74 pass and 1 skips (see the table above for when and where). One runtime dependency (`cryptography`).
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
 - The `routing_not_execution` check in `validate_package` is hardcoded `True` (in `src/tie/validation/validate.py`) and cannot fail.
@@ -142,7 +145,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 
 ## 8. Optional CNS Connection
 
-TIE does not need CNS. Its only runtime dependency is `cryptography`, and nothing in the package imports CNS when it loads, and `tests/test_cns_independence.py` checks this with CNS blocked. `src/tie/cns_connector.py` is the one place that knows CNS exists. Install it with `pip install 'tie-transcript-intelligence-engine[cns]'`; without CNS, asking for a digest raises `CnsNotInstalled` and nothing else changes.
+TIE does not need CNS. An optional connector lets a CNS verdict be checked against the exact package it judged, and TIE's side is one-way; CNS's registry lists the link as two-way because CNS's spine script uses TIE's intake. Its only runtime dependency is `cryptography`, and nothing in the package imports CNS when it loads, and `tests/test_cns_independence.py` checks this with CNS blocked. `src/tie/cns_connector.py` is the one place that knows CNS exists. TIE is not published to PyPI. To use the connector, clone this repository and install it from the clone with the `cns` extra (`pip install -e '.[cns]'`); without CNS, asking for a digest raises `CnsNotInstalled` and nothing else changes.
 
 **What is bound.** A `TIEPackage` (`package_content`, `package_digest`) or a `TypedHandoff` (`handoff_content`, `handoff_digest`), as plain deterministic data: the package id, the source (id, media type, title, provenance, and a SHA-256 and length of the transcript instead of the transcript), every coverage segment with its status and checksum, all evidence, artifacts, identity references and relationships, the reconstruction, the validation result, the knowledge views, the handoff, the routing signal and the build classification. `binds(result, obj)` says whether a `cns.gate.GateResult` was issued against exactly that output, using the subject labels `tie.package` and `tie.handoff`. A verdict about one package does not bind to another, nor to a package whose coverage says a different part of the source was read.
 
