@@ -48,7 +48,7 @@ Numbers below were measured on the date and commit shown in the table.
 | CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. This README does not name a commit as current. Each commit's CI result is on its Actions page. |
 | Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed; 74 passed and 1 skipped without `cns`. Both are local runs on Python 3.13, 2026-11-10, main `5a0dc59`, CNS v2.3.0 for the first. |
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable (measured 2026-11-10, main `5a0dc59`). An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
-| CNS pin | The optional `cns` extra is pinned to the tag v2.3.0 (`pyproject.toml`) |
+| CNS pin | The optional `cns` extra is pinned to the tag v3.0.0 (`pyproject.toml`) |
 
 ### Running the spine check (from CNS)
 
