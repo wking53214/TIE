@@ -98,4 +98,4 @@ def test_the_package_declares_only_cryptography_at_runtime_and_pins_the_cns_extr
     # cryptography verifies HERALD's Ed25519 export signatures in TIE itself (no caller-supplied verifier). It is the
     # only runtime dependency; nothing else may be added without changing this assertion deliberately.
     assert meta["dependencies"] == ["cryptography>=42"]
-    assert meta["optional-dependencies"]["cns"] == ["cns @ git+https://github.com/wking53214/CNS.git@v3.0.0"]
+    assert meta["optional-dependencies"]["cns"] == ["cns @ git+https://github.com/wking53214/CNS.git@v4.0.0"]
