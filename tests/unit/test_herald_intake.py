@@ -15,6 +15,7 @@ from tie.evidence.herald_intake import (
     evidence_from_herald_export,
     export_key_id,
     export_signing_bytes,
+    source_sha256_of,
 )
 from tie.models import EpistemicStatus
 from tie.source.loader import create_source
@@ -60,6 +61,34 @@ def test_each_machine_record_names_the_source_hash_tie_verified_it_against():
 
     [record] = evidence_from_herald_export(_source(), EXPORT, trusted_keys=FIXTURE_TRUSTED)
     assert f"source_sha256: {hashlib.sha256(TEXT.encode('utf-8')).hexdigest()}" in record.notes
+
+
+def test_source_sha256_of_returns_the_hash_tie_verified_and_equals_the_note():
+    import hashlib
+
+    [record] = evidence_from_herald_export(_source(), EXPORT, trusted_keys=FIXTURE_TRUSTED)
+    expected = hashlib.sha256(TEXT.encode("utf-8")).hexdigest()
+    assert source_sha256_of(record) == expected
+    assert record.notes == (f"source_sha256: {expected}",)
+
+
+def test_source_sha256_of_is_none_for_a_record_that_did_not_come_from_intake():
+    from tie.evidence.extract import evidence_from_statement
+    from tie.models import EpistemicStatus
+
+    record = evidence_from_statement(_source(), evidence_id="e-1", statement="x", epistemic_status=EpistemicStatus.INFERRED)
+    assert source_sha256_of(record) is None
+
+
+def test_an_intake_record_serializes_and_digests_as_it_did_before_the_accessor():
+    import hashlib
+
+    from tie.cns_connector import _plain
+
+    [record] = evidence_from_herald_export(_source(), EXPORT, trusted_keys=FIXTURE_TRUSTED)
+    blob = json.dumps(_plain(record), sort_keys=True, separators=(",", ":")).encode()
+    # Computed on main before source_sha256_of existed: a new record field would change this.
+    assert hashlib.sha256(blob).hexdigest() == "0f1becdc5b547a19f92dde19670f0690131fedc128cd2669f295aa1193812d02"
 
 
 def test_refuses_without_trusted_keys():
