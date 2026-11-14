@@ -39,7 +39,7 @@ from tie.evidence.extract import evidence_from_statement
 from tie.models import EpistemicStatus, EvidenceRecord, OriginKind, SourceRecord
 
 __all__ = ["HeraldIntakeRefused", "evidence_from_herald_export", "signoffs_from_herald_export",
-           "MACHINE_READINGS", "SIGNOFF_READING"]
+           "MACHINE_READINGS", "SIGNOFF_READING", "source_sha256_of"]
 
 #: The one HERALD export format TIE accepts: an Ed25519 signature by a pinned key (HERALD's version 3).
 EXPORT_SIGNATURE_VERSION = "3"
@@ -163,8 +163,24 @@ def evidence_from_herald_export(
         )
         # The source text hash TIE verified this claim against, recorded by TIE: a consumer that checks where a record
         # came from reads it here, not from anything the caller says about the text.
-        records.append(dataclasses.replace(record, notes=(*record.notes, f"source_sha256: {expected_hash}")))
+        records.append(dataclasses.replace(record, notes=(*record.notes, f"{_SOURCE_SHA256_PREFIX}{expected_hash}")))
     return records
+
+
+_SOURCE_SHA256_PREFIX = "source_sha256: "
+
+
+def source_sha256_of(record: EvidenceRecord) -> Optional[str]:
+    """The source text hash TIE verified ``record`` against, or None if intake did not record one.
+
+    This is the one place that reads the ``source_sha256: <hex>`` note, so a consumer need not parse notes. It is
+    a helper and not a record field because a field would enter every digest of a record (`tie.cns_connector`
+    binds every dataclass field), changing digests of records that exist today.
+    """
+    for note in record.notes:
+        if note.startswith(_SOURCE_SHA256_PREFIX):
+            return note[len(_SOURCE_SHA256_PREFIX):]
+    return None
 
 
 def _signoff_id(source_hash: str, entry: Mapping[str, Any], confirmed_by: str) -> str:
