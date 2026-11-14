@@ -84,7 +84,7 @@ The evidence spine is the five repositories a document passes through in order: 
 
 TIE is the second hop. It records evidence from statements the caller supplies or from a verified HERALD export and writes no records of its own: it persists nothing and has no ledger, so it has no write permission to gate. Its package and handoff can be bound to a CNS verdict (section 8), so a verdict can be checked against the exact package it was about.
 
-**Gate position.** TIE holds no gate position: it judges nothing and creates no CNS `GateResult`. `src/tie/cns_connector.py` only computes a digest of a package or handoff and checks (`binds`) that a verdict from some other gate was judged on exactly that content. The verdict comes from another repository's gate, so TIE is not on the ALPHA or OMEGA end of any chain.
+**Gate position.** TIE ships one gate, at ALPHA: `TieIntakeGate` in `src/tie/cns_connector.py`. It answers one question about integrity and nothing about content: was this HERALD export, offered with this source, taken in as TIE evidence (the question `evidence_from_herald_export` already answers by raising). PASS carries the evidence ids TIE produced, bound to the source; a refusal or an unreadable export is a TERMINAL_BREACH. For a package or a handoff TIE still judges nothing: the connector only computes a digest and checks (`binds`) that a verdict from some other gate was judged on exactly that content, and TIE is on no OMEGA end.
 
 ## Role in the evidence spine
 
@@ -132,8 +132,8 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 **CNS interaction: PARTIAL.**
 - Implemented, TIE side: an optional connector that makes a package or handoff nameable for a CNS verdict and checks a `cns.gate.GateResult` against it: `src/tie/cns_connector.py` (lazy `importlib` of `cns.gate`, the `subject_digest` function, and the `binds` function). Tested in `tests/test_cns_connector.py` and `tests/test_cns_independence.py` (CNS blocked).
 - Implemented, CNS side: CNS's spine script imports TIE's intake (`herald_intake` in `chains/evidence_spine.py` in the CNS repo, and calls into it at several points; checked 2026-11-07 by reading the source, and run once that day, see the next section). That is CNS using TIE, not TIE using CNS.
-- Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
-- So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
+- Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues a verdict only when something runs `TieIntakeGate`, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
+- So for a package or a handoff the integration is binding only: a CNS verdict about one is possible to check, but nothing in TIE produces or requires one. The intake gate is the one verdict TIE can produce, and nothing in TIE runs it.
 
 **Maturity and limitations.**
 - 195 tests pass with CNS importable. Without CNS: 74 pass and 1 skips (see the table above for when and where). One runtime dependency (`cryptography`).
@@ -149,6 +149,6 @@ TIE does not need CNS. An optional connector lets a CNS verdict be checked again
 
 **What is bound.** A `TIEPackage` (`package_content`, `package_digest`) or a `TypedHandoff` (`handoff_content`, `handoff_digest`), as plain deterministic data: the package id, the source (id, media type, title, provenance, and a SHA-256 and length of the transcript instead of the transcript), every coverage segment with its status and checksum, all evidence, artifacts, identity references and relationships, the reconstruction, the validation result, the knowledge views, the handoff, the routing signal and the build classification. `binds(result, obj)` says whether a `cns.gate.GateResult` was issued against exactly that output, using the subject labels `tie.package` and `tie.handoff`. A verdict about one package does not bind to another, nor to a package whose coverage says a different part of the source was read.
 
-**Binding only, and why.** There is no gate, verdict mapping or chain here. TIE preserves before it interprets and does not judge, and its handoff stays data, not execution. Whether a package is good enough for anything is for the repository that issues the verdict. This only lets that verdict be checked against the package it was about.
+**Binding only for packages, and why.** TIE preserves before it interprets and does not judge, and its handoff stays data, not execution. The one gate it ships (`TieIntakeGate`) judges whether an intake was verified, not whether anything is good, and adds no rule beyond what the intake already enforces. Whether a package is good enough for anything is for the repository that issues the verdict. This only lets that verdict be checked against the package it was about.
 
 Apache-2.0. Read `BUILD_STATUS.md` before relying on the ambition described in the other docs.

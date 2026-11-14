@@ -15,10 +15,18 @@ a digest of the content it judged (``GateResult.subject``,
 way, so a verdict some other repository issued about a package can be checked
 against exactly that package with ``GateResult.binds``.
 
-That is all it does. TIE does not judge: it preserves before it interprets, and
-its handoff is data, not execution. So there is no gate here, no verdict
-mapping and no chain. Whether a package is good enough for anything is not
-TIE's question and this module does not answer it.
+Naming a package or a handoff is all it does for them. TIE does not judge: it
+preserves before it interprets, and its handoff is data, not execution.
+Whether a package is good enough for anything is not TIE's question and this
+module does not answer it.
+
+The one gate TIE ships is about integrity, not content: :class:`TieIntakeGate`
+reports whether a HERALD export, offered with a source, was taken in as
+evidence, which is the question ``evidence_from_herald_export`` already answers
+by raising. It runs that same call and maps its refusal to a verdict. It does
+not decide whether a claim is true, important or enough, and it adds no rule of
+its own: a PASS means TIE produced evidence from this export for this source,
+and a TERMINAL_BREACH means it refused.
 
 What is bound
 -------------
@@ -30,6 +38,9 @@ What is bound
   the typed handoff, the routing signal and the build classification. Every
   dataclass field is bound, including any added later.
 * :func:`handoff_content` is a ``TypedHandoff`` on its own.
+* :func:`intake_content` is one intake: the source (id and a SHA-256 of its
+  text, never the text) and the ids of the evidence records TIE produced from
+  it, in order. A refused intake binds the source and says it was refused.
 
 Plain data only: enums become their values, tuples become lists, mappings keep
 string keys, sets are sorted. Nothing volatile or process-local is bound (TIE
@@ -54,12 +65,18 @@ from tie.models import SourceRecord, TIEPackage, TypedHandoff
 
 __all__ = [
     "CnsNotInstalled",
+    "GATE_NAME",
     "HANDOFF_SUBJECT",
+    "HeraldIntake",
+    "INTAKE_SUBJECT",
     "PACKAGE_SUBJECT",
+    "TieIntakeGate",
     "binds",
     "cns_available",
     "handoff_content",
     "handoff_digest",
+    "intake_content",
+    "intake_digest",
     "package_content",
     "package_digest",
 ]
@@ -68,6 +85,10 @@ INSTALL_HINT = "pip install 'tie-transcript-intelligence-engine[cns]'"
 
 PACKAGE_SUBJECT = "tie.package"
 HANDOFF_SUBJECT = "tie.handoff"
+INTAKE_SUBJECT = "tie.intake"
+
+#: The name of the gate this module ships, as ``GateResult.gate`` carries it.
+GATE_NAME = "tie_intake"
 
 
 class CnsNotInstalled(ImportError):
@@ -190,3 +211,72 @@ def binds(result: object, obj: object, *, subject: Optional[str] = None) -> bool
     if not isinstance(result, _cns_gate().GateResult):
         return False
     return bool(result.binds(label if subject is None else subject, computed))
+
+
+@dataclasses.dataclass(frozen=True)
+class HeraldIntake:
+    """One attempted intake: a source and the HERALD export offered for it. This is what :class:`TieIntakeGate` judges."""
+
+    source: SourceRecord
+    export: Mapping[str, Any]
+
+
+def intake_content(source: SourceRecord, evidence: Optional[list] = None) -> dict:
+    """The content a verdict on an intake is bound to.
+
+    ``evidence`` is the list of records ``evidence_from_herald_export`` returned, or None for a refused intake. The
+    source's text is replaced by its SHA-256, so the binding names the document without carrying it.
+    """
+    content: dict = {
+        "kind": "tie_intake",
+        "source_id": source.source_id,
+        "source_sha256": hashlib.sha256(source.content.encode("utf-8")).hexdigest(),
+        "refused": evidence is None,
+        "evidence_ids": [] if evidence is None else [record.evidence_id for record in evidence],
+    }
+    return content
+
+
+def intake_digest(source: SourceRecord, evidence: Optional[list] = None) -> str:
+    """The digest a verdict bound to this intake carries, with ``INTAKE_SUBJECT``."""
+    return _cns_gate().subject_digest(intake_content(source, evidence))
+
+
+class TieIntakeGate:
+    """A CNS gate at ALPHA: was this HERALD export taken in as TIE evidence for this source?
+
+    ``trusted_keys`` maps HERALD export key ids to the Ed25519 public keys the caller pins, exactly as
+    ``evidence_from_herald_export`` takes them. The gate calls that function and judges nothing else: PASS when it
+    returns evidence, TERMINAL_BREACH when it refuses or cannot read the export at all. A breach is final, since a
+    different export or a different source is a different intake, not a retry of this one.
+    """
+
+    name = GATE_NAME
+
+    def __init__(self, trusted_keys: Mapping[str, Any]) -> None:
+        _cns_gate()  # fail here, at construction, not on first use
+        if not isinstance(trusted_keys, Mapping):
+            raise TypeError("trusted_keys must map HERALD export key ids to the Ed25519 public keys the caller pins")
+        self._trusted_keys = dict(trusted_keys)
+
+    @property
+    def position(self) -> Any:
+        return _cns_gate().GatePosition.ALPHA
+
+    def check(self, candidate: object) -> Any:
+        if not isinstance(candidate, HeraldIntake):
+            raise TypeError(f"the TIE intake gate judges a HeraldIntake; got {type(candidate).__name__}")
+        from tie.evidence.herald_intake import evidence_from_herald_export
+
+        cns = _cns_gate()
+        try:
+            evidence = evidence_from_herald_export(candidate.source, candidate.export, trusted_keys=self._trusted_keys)
+        except Exception as exc:  # noqa: BLE001 - a refusal, or an export too broken to read: never a PASS
+            return cns.GateResult(
+                gate=self.name, position=self.position, outcome=cns.GateOutcome.TERMINAL_BREACH,
+                reason=f"{type(exc).__name__}: {exc}", subject=INTAKE_SUBJECT,
+                subject_digest=intake_digest(candidate.source, None))
+        return cns.GateResult(
+            gate=self.name, position=self.position, outcome=cns.GateOutcome.PASS,
+            reason=f"{len(evidence)} evidence record(s) taken in from the export",
+            subject=INTAKE_SUBJECT, subject_digest=intake_digest(candidate.source, evidence))
