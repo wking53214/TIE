@@ -103,3 +103,31 @@ def test_claiming_before_verifying_is_the_wrong_order_and_is_not_undone_by_a_lat
     with pytest.raises(HeraldIntakeRefused):
         evidence_from_herald_export(SOURCE, EXPORT, trusted_keys={}, now=NOW)  # then intake refuses
     assert ledger.has_seen(EXPORT["identity"]["handoff_id"]) is True          # the ID stays spent
+
+
+def test_record_handoff_once_with_trusted_keys_refuses_a_forged_export_and_spends_nothing():
+    """The remedy for the hazard above: with trusted_keys the claim verifies first."""
+    key = Ed25519PrivateKey.generate()
+    forged = dict(EXPORT, export_mac=key.sign(export_signing_bytes(EXPORT)).hex())
+    ledger = SeenHandoffs()
+    with pytest.raises(HeraldIntakeRefused, match="did not verify"):
+        record_handoff_once(forged, ledger, trusted_keys=PINNED, now=NOW)
+    assert ledger.has_seen(EXPORT["identity"]["handoff_id"]) is False
+    take_in(EXPORT, ledger)  # the real export is still taken in
+
+
+def test_record_handoff_once_with_trusted_keys_refuses_other_audience_and_stale_exports():
+    ledger = SeenHandoffs()
+    with pytest.raises(HeraldIntakeRefused, match="addressed"):
+        record_handoff_once(EXPORT, ledger, trusted_keys=PINNED, audience="SOMEONE_ELSE", now=NOW)
+    with pytest.raises(HeraldIntakeRefused):
+        record_handoff_once(EXPORT, ledger, trusted_keys=PINNED, max_age_seconds=1,
+                            now=NOW + __import__("datetime").timedelta(hours=2))
+    assert ledger.has_seen(EXPORT["identity"]["handoff_id"]) is False
+
+
+def test_record_handoff_once_with_trusted_keys_still_claims_once_for_a_genuine_export():
+    ledger = SeenHandoffs()
+    record_handoff_once(EXPORT, ledger, trusted_keys=PINNED, now=NOW)
+    with pytest.raises(HeraldIntakeRefused, match="already taken in"):
+        record_handoff_once(EXPORT, ledger, trusted_keys=PINNED, now=NOW)

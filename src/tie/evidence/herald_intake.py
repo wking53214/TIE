@@ -228,7 +228,15 @@ class SeenHandoffs:
             self._seen.add(handoff_id)
 
 
-def record_handoff_once(export: Mapping[str, Any], seen: Any) -> None:
+def record_handoff_once(
+    export: Mapping[str, Any],
+    seen: Any,
+    *,
+    trusted_keys: Optional[Mapping[str, Ed25519PublicKey]] = None,
+    audience: str = DEFAULT_AUDIENCE,
+    max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
+    now: Optional[datetime] = None,
+) -> None:
     """Call once per export, after it has been accepted, to claim its handoff ID. Refuses a repeat.
 
     YOU MUST CALL THIS. The intake functions do not record anything on their own, so without this call (and a ledger)
@@ -239,7 +247,15 @@ def record_handoff_once(export: Mapping[str, Any], seen: Any) -> None:
     `seen` is a `HandoffLedger`. If the ledger itself fails (raises, or does not return a plain True or False), the
     export is refused: TIE cannot say the ID was recorded, so it must not say the handoff was taken in.
     A legacy object with only `has_seen` and `record` still works, but those are two steps and a race can slip
-    between them; it is accepted with a DeprecationWarning."""
+    between them; it is accepted with a DeprecationWarning.
+
+    Pass `trusted_keys` (and, if you changed them, `audience`, `max_age_seconds`, `now`) and this function first checks
+    the signature, audience and age itself, so an export that would not be accepted cannot spend an ID. Without
+    `trusted_keys` it checks nothing and trusts the caller to have verified the export first, as before."""
+    if trusted_keys is not None:
+        _check_call(export, trusted_keys, audience, max_age_seconds, now)
+        _check_signature(export, trusted_keys)
+        _check_identity(export, audience, max_age_seconds, now)
     identity = export.get("identity")
     if export.get("export_mac_version") != EXPORT_SIGNATURE_VERSION_V4 or not isinstance(identity, Mapping):
         raise HeraldIntakeRefused("only a version 4 export has a handoff ID to track")
