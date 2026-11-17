@@ -15,6 +15,7 @@ from tie.evidence.herald_intake import (
     evidence_from_herald_export,
     export_key_id,
     export_signing_bytes,
+    _evidence_id,
     source_sha256_of,
 )
 from tie.models import EpistemicStatus
@@ -150,12 +151,11 @@ def test_replaying_the_same_export_gives_the_same_evidence_ids():
 
 
 def test_same_claim_at_a_different_span_gets_a_different_id():
-    moved = json.loads(json.dumps(EXPORT))
-    moved["admitted"][0]["span"] = [moved["admitted"][0]["span"][0] + 1, moved["admitted"][0]["span"][1] + 1]
-    moved = resigned(moved)
-    original = evidence_from_herald_export(_source(), EXPORT, trusted_keys=ALL_TRUSTED)[0].evidence_id
-    shifted = evidence_from_herald_export(_source(), moved, trusted_keys=ALL_TRUSTED)[0].evidence_id
-    assert original != shifted
+    """The ID depends on the span. The ID function is called directly: a shifted span on a real export is now refused
+    at intake (see test_herald_span_check.py), so it can no longer be used to reach two valid IDs."""
+    entry = EXPORT["admitted"][0]
+    shifted = dict(entry, span=[entry["span"][0] + 1, entry["span"][1] + 1])
+    assert _evidence_id(entry["source_hash"], entry) != _evidence_id(entry["source_hash"], shifted)
 
 
 def test_refused_claims_never_enter():
