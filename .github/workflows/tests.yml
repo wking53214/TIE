@@ -54,3 +54,26 @@ jobs:
         env:
           TIE_REQUIRE_CNS: "1"
         run: python -m pytest tests/ -q -rs
+
+  quality:
+    # Ruff and mypy against a recorded baseline (tools/lint_baseline.json). New findings fail; the existing ones are
+    # tracked, not hidden. The tools are pinned exactly in the `lint` extra because the baseline depends on their version.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install package with the lint extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[lint]"
+
+      - name: Ruff, no findings above the baseline
+        run: python tools/lint_baseline.py check ruff
+
+      - name: Mypy, no findings above the baseline
+        run: python tools/lint_baseline.py check mypy

@@ -7,7 +7,11 @@ from pathlib import Path
 import pytest
 
 from tie import build_package, create_source, segment_source
-from tie.validation.validate import ROUTING_LABEL, routing_is_data_only, validate_package
+from tie.validation.validate import (
+    ROUTING_LABEL,
+    routing_is_data_only,
+    validate_package,
+)
 
 
 def _package(routing_signal=None):
