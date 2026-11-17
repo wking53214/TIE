@@ -1,0 +1,106 @@
+{
+  "export": {
+    "admitted": [
+      {
+        "authority": "ADVISORY",
+        "bundle_id": "s1",
+        "claim_id": "clm-83cf12189a36",
+        "confidence": 0.95,
+        "confirmation_rationale": null,
+        "confirmed_at": null,
+        "confirmed_by": null,
+        "content_hash": "42891685c8c79224439a0efce0accb0218a313122c2406d3ebea204529164645",
+        "derivation_method": "herald:currency_amount",
+        "extractor": "currency_amount",
+        "kind": "amount",
+        "opacity_flags": [],
+        "raw": "$1,250.00 ",
+        "reading": "EXTRACTED",
+        "reasons": [],
+        "segment": null,
+        "source_hash": "0ad3d1e5e6a71865384813bba85281411d7a206356221614bcd55c39727273cd",
+        "source_id": "loan-8891",
+        "span": [
+          18,
+          28
+        ],
+        "standing": "record",
+        "value": {
+          "amount": 1250.0,
+          "currency": "USD"
+        }
+      },
+      {
+        "authority": "ADVISORY",
+        "bundle_id": "s1",
+        "claim_id": "clm-287eb52c7212",
+        "confidence": 0.98,
+        "confirmation_rationale": null,
+        "confirmed_at": null,
+        "confirmed_by": null,
+        "content_hash": "7a07991a0e41d82ca2df3fb89310b85267952bb5eb65938f96d09a2a0ea59fc3",
+        "derivation_method": "herald:iso_date",
+        "extractor": "iso_date",
+        "kind": "date",
+        "opacity_flags": [],
+        "raw": "2026-03-14",
+        "reading": "EXTRACTED",
+        "reasons": [],
+        "segment": null,
+        "source_hash": "0ad3d1e5e6a71865384813bba85281411d7a206356221614bcd55c39727273cd",
+        "source_id": "loan-8891",
+        "span": [
+          31,
+          41
+        ],
+        "standing": "record",
+        "value": "2026-03-14"
+      }
+    ],
+    "bundles": {
+      "s1": [
+        "clm-83cf12189a36",
+        "clm-287eb52c7212"
+      ]
+    },
+    "document": {
+      "content_hash": "0ad3d1e5e6a71865384813bba85281411d7a206356221614bcd55c39727273cd",
+      "length": 42,
+      "medium": "document",
+      "retrieved_at": null,
+      "segments": 0,
+      "source_id": "loan-8891",
+      "standing": "record",
+      "version": null
+    },
+    "export_mac": "2509976053483b36ea101f048a404caf2ca1b0178baf895c71f1a612f17dbb56705a3f69891659d51e56866f94b3d7b8f401fef49d5d36b74f87092f62134309",
+    "export_mac_version": "4",
+    "herald": {
+      "code_hash": "3d231b0f2f63e16baa2324072c28ce6dd590403a8cd5b103cdfc0e2b158f0447",
+      "version": "0.6.0"
+    },
+    "identity": {
+      "audience": "TIE",
+      "handoff_id": "hid-065342d1bd594c6ca13ad6232b0e7f43",
+      "schema": "herald-handoff/4",
+      "signed_at": "2026-11-17T01:10:58.068916+00:00"
+    },
+    "key_id": "ed25519-d3017cadb81aa141",
+    "prepared_at": "2026-11-17T01:10:58.069128+00:00",
+    "refused": [],
+    "summary": {
+      "admitted": 2,
+      "bundles": 1,
+      "refused": 0,
+      "refused_by_opacity_flag": {},
+      "refused_by_verdict": {},
+      "source_id": "loan-8891",
+      "standing": "record",
+      "standing_declared": true,
+      "total": 2
+    }
+  },
+  "produced_by": "HERALD 0.6.0 (branch claude/v4-signed-handoff-identity); signing key discarded",
+  "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAE5+vpU+/bm0ghDXoetslDSjybVIXuNRXViRXyHtWJ1U=\n-----END PUBLIC KEY-----\n",
+  "text": "The borrower paid $1,250.00 on 2026-03-14."
+}

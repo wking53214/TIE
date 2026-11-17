@@ -14,11 +14,16 @@ Rules, all fail closed:
   reading is left out of both.
 - Evidence IDs are derived from the claim's source hash, kind, span and text,
   so re-ingesting the same export produces the same IDs instead of duplicates.
-- The HERALD export must be SIGNED (version 3, Ed25519) by a key in
+- The HERALD export must be SIGNED (version 4, or the older version 3, both Ed25519) by a key in
   ``trusted_keys``, which the caller pins. TIE checks the signature itself;
   it does not accept a verifier function from the caller, because a caller
   supplied verifier is only as honest as the caller. Unsigned (version 1 or 2)
   exports are refused: their proof lives in the producing process only.
+- A version 4 export also carries a signed identity: a unique handoff ID, the signer's own signing time, and the
+  audience it is addressed to. TIE refuses one addressed to someone else, one signed too long ago (the default
+  window is 24 hours) or too far in the future (5 minutes of clock difference is allowed), and, through
+  `SeenHandoffs`, one it has already taken in. The signing time is the signer's claim, not an independent clock.
+- Version 3 has none of that. It is still accepted, with a warning, until `V3_SUNSET`; after that it is refused.
 - Every admitted claim must match the source text by hash. A claim read from
   different text is refused.
 
@@ -30,6 +35,8 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any, List, Mapping, Optional
 
 from cryptography.exceptions import InvalidSignature
@@ -39,10 +46,26 @@ from tie.evidence.extract import evidence_from_statement
 from tie.models import EpistemicStatus, EvidenceRecord, OriginKind, SourceRecord
 
 __all__ = ["HeraldIntakeRefused", "evidence_from_herald_export", "signoffs_from_herald_export",
-           "MACHINE_READINGS", "SIGNOFF_READING", "source_sha256_of"]
+           "MACHINE_READINGS", "SIGNOFF_READING", "source_sha256_of", "SeenHandoffs", "record_handoff_once",
+           "V3_SUNSET", "DEFAULT_AUDIENCE", "DEFAULT_MAX_AGE_SECONDS"]
 
-#: The one HERALD export format TIE accepts: an Ed25519 signature by a pinned key (HERALD's version 3).
+_log = logging.getLogger(__name__)
+
+#: HERALD export formats TIE accepts: an Ed25519 signature by a pinned key. Version 3 has no identity block and is
+#: being phased out (see V3_SUNSET); version 4 signs a handoff ID, signing time, audience and schema label.
 EXPORT_SIGNATURE_VERSION = "3"
+EXPORT_SIGNATURE_VERSION_V4 = "4"
+EXPORT_SCHEMA_V4 = "herald-handoff/4"
+_ACCEPTED_VERSIONS = (EXPORT_SIGNATURE_VERSION, EXPORT_SIGNATURE_VERSION_V4)
+
+#: After this moment a version 3 export is refused. Before it, accepted with a warning.
+V3_SUNSET = datetime(2027, 3, 31, 23, 59, 59, tzinfo=timezone.utc)
+#: Who this receiver is. A version 4 export addressed to anyone else is refused.
+DEFAULT_AUDIENCE = "TIE"
+#: How old a version 4 export's signing time may be. A choice for the deployer, not a security constant.
+DEFAULT_MAX_AGE_SECONDS = 24 * 60 * 60
+#: How far in the future a signing time may be, to allow for two clocks that disagree a little.
+_CLOCK_SKEW = timedelta(minutes=5)
 
 #: HERALD readings that are machine output. HUMAN_CONFIRMED is absent on purpose.
 MACHINE_READINGS = frozenset({"EXTRACTED", "INFERRED"})
@@ -79,26 +102,30 @@ def export_key_id(public_key: Ed25519PublicKey) -> str:
 
 
 def export_signing_bytes(export: Mapping[str, Any]) -> bytes:
-    """The exact bytes HERALD's version 3 signature covers.
+    """The exact bytes HERALD's signature covers (version 3, or version 4 with its identity block).
 
-    Must match herald.handoff._signature_input byte for byte. The shared vector is in tests/unit/test_herald_intake.py
-    and the same vector is asserted in HERALD's Tests/test_export_signature.py, so a drift on either side is a red test.
+    Must match herald.handoff._signature_input byte for byte. The shared vectors are in tests/unit/test_herald_intake.py
+    and the same vectors are asserted in HERALD's tests, so a drift on either side is a red test.
     """
+    version = EXPORT_SIGNATURE_VERSION_V4 if export.get("export_mac_version") == EXPORT_SIGNATURE_VERSION_V4 \
+        else EXPORT_SIGNATURE_VERSION
     payload = {
-        "export_mac_version": EXPORT_SIGNATURE_VERSION,
+        "export_mac_version": version,
         "document": export.get("document") or {},
         "herald": export.get("herald") or {},
         "admitted": export.get("admitted") or [],
         "refused": export.get("refused") or [],
         "key_id": export.get("key_id"),
     }
+    if version == EXPORT_SIGNATURE_VERSION_V4:
+        payload["identity"] = export.get("identity") or {}
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
 
 
 def _check_signature(export: Mapping[str, Any], trusted_keys: Mapping[str, Ed25519PublicKey]) -> None:
-    if export.get("export_mac_version") != EXPORT_SIGNATURE_VERSION:
+    if export.get("export_mac_version") not in _ACCEPTED_VERSIONS:
         raise HeraldIntakeRefused(
-            "only signed HERALD exports (version 3) are accepted; an unsigned or in-process export is refused"
+            "only signed HERALD exports (version 3 or 4) are accepted; an unsigned or in-process export is refused"
         )
     key_id = export.get("key_id")
     key = trusted_keys.get(key_id) if isinstance(key_id, str) else None
@@ -113,10 +140,91 @@ def _check_signature(export: Mapping[str, Any], trusted_keys: Mapping[str, Ed255
         raise HeraldIntakeRefused(f"HERALD export did not verify: signature does not match ({type(exc).__name__})") from exc
 
 
+def _parse_time(value: Any) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except ValueError as exc:
+        raise HeraldIntakeRefused(f"HERALD export's signing time {value!r} is not a time") from exc
+    if parsed.tzinfo is None:
+        raise HeraldIntakeRefused("HERALD export's signing time has no time zone")
+    return parsed
+
+
+def _check_identity(export: Mapping[str, Any], audience: str, max_age_seconds: int,
+                    now: Optional[datetime]) -> None:
+    """Version 4: the identity block is signed, so these values are the signer's. Refuse what is not for us or stale.
+
+    Version 3 has no identity block: accepted with a warning until V3_SUNSET, refused after it."""
+    moment = now or datetime.now(timezone.utc)
+    if export.get("export_mac_version") != EXPORT_SIGNATURE_VERSION_V4:
+        if moment > V3_SUNSET:
+            raise HeraldIntakeRefused(
+                f"version 3 HERALD exports are no longer accepted (sunset {V3_SUNSET.date()}); "
+                "ask the producer for a version 4 export"
+            )
+        _log.warning("HERALD version 3 export accepted without audience, signing time or handoff ID; "
+                     "version 3 is refused after %s", V3_SUNSET.date())
+        return
+    identity = export.get("identity")
+    if not isinstance(identity, Mapping):
+        raise HeraldIntakeRefused("HERALD version 4 export has no identity block")
+    for name in ("handoff_id", "signed_at", "audience", "schema"):
+        value = identity.get(name)
+        if not isinstance(value, str) or not value.strip():
+            raise HeraldIntakeRefused(f"HERALD version 4 export's identity block has no {name}")
+    if identity["schema"] != EXPORT_SCHEMA_V4:
+        raise HeraldIntakeRefused(f"unsupported HERALD export schema {identity['schema']!r}")
+    if identity["audience"] != audience:
+        raise HeraldIntakeRefused(
+            f"HERALD export is addressed to {identity['audience']!r}, not to {audience!r}")
+    signed_at = _parse_time(identity["signed_at"])
+    if signed_at > moment + _CLOCK_SKEW:
+        raise HeraldIntakeRefused("HERALD export claims to be signed in the future")
+    if moment - signed_at > timedelta(seconds=max_age_seconds):
+        raise HeraldIntakeRefused(
+            f"HERALD export was signed more than {max_age_seconds} seconds ago; ask for a fresh one")
+
+
+class SeenHandoffs:
+    """The handoff IDs this receiver has already taken in, so the same export is not taken in twice.
+
+    In memory only. A deployer that needs this to survive a restart keeps the set somewhere durable and passes an
+    object with the same two methods. Without a ledger, replay is not detected (TIE's evidence IDs are already
+    deterministic, so re-reading the same export does not create duplicate evidence)."""
+
+    def __init__(self) -> None:
+        self._seen: set = set()
+
+    def has_seen(self, handoff_id: str) -> bool:
+        return handoff_id in self._seen
+
+    def record(self, handoff_id: str) -> None:
+        self._seen.add(handoff_id)
+
+
+def record_handoff_once(export: Mapping[str, Any], seen: SeenHandoffs) -> None:
+    """Call once per export, after it has been accepted, to remember its handoff ID. Refuses a repeat.
+
+    It is separate from the two intake functions because one export is normally read by both (machine readings and
+    sign-offs); counting each read as a replay would refuse the second. Version 3 has no ID and cannot be tracked."""
+    identity = export.get("identity")
+    if export.get("export_mac_version") != EXPORT_SIGNATURE_VERSION_V4 or not isinstance(identity, Mapping):
+        raise HeraldIntakeRefused("only a version 4 export has a handoff ID to track")
+    handoff_id = identity.get("handoff_id")
+    if not isinstance(handoff_id, str) or not handoff_id:
+        raise HeraldIntakeRefused("HERALD version 4 export has no handoff ID")
+    if seen.has_seen(handoff_id):
+        raise HeraldIntakeRefused(f"HERALD handoff {handoff_id!r} was already taken in")
+    seen.record(handoff_id)
+
+
 def _verified_entries(
     source: SourceRecord,
     export: Mapping[str, Any],
     trusted_keys: Optional[Mapping[str, Ed25519PublicKey]],
+    audience: str = DEFAULT_AUDIENCE,
+    max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
+    now: Optional[datetime] = None,
 ) -> tuple:
     """The admitted entries of a verified export, each checked against the source text. Raises on any failure."""
     if not trusted_keys:
@@ -124,6 +232,7 @@ def _verified_entries(
             "no trusted HERALD export keys supplied; refusing unverified HERALD output"
         )
     _check_signature(export, trusted_keys)
+    _check_identity(export, audience, max_age_seconds, now)
 
     expected_hash = _text_hash(source.content)
     entries = tuple(export.get("admitted", []))
@@ -141,13 +250,16 @@ def evidence_from_herald_export(
     export: Mapping[str, Any],
     *,
     trusted_keys: Mapping[str, Ed25519PublicKey],
+    audience: str = DEFAULT_AUDIENCE,
+    max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
+    now: Optional[datetime] = None,
 ) -> List[EvidenceRecord]:
     """Turn the admitted claims of a HERALD export into TIE evidence records.
 
     ``trusted_keys`` maps HERALD export key IDs to the Ed25519 public keys the caller pins. The export must be
     signed by one of them (see the module docstring). The caller never supplies a verifier function.
     """
-    expected_hash, entries = _verified_entries(source, export, trusted_keys)
+    expected_hash, entries = _verified_entries(source, export, trusted_keys, audience, max_age_seconds, now)
     records: List[EvidenceRecord] = []
     for entry in entries:
         if entry.get("reading") not in MACHINE_READINGS:
@@ -199,6 +311,9 @@ def signoffs_from_herald_export(
     export: Mapping[str, Any],
     *,
     trusted_keys: Mapping[str, Ed25519PublicKey],
+    audience: str = DEFAULT_AUDIENCE,
+    max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
+    now: Optional[datetime] = None,
 ) -> List[EvidenceRecord]:
     """Turn the claims a named person confirmed at HERALD into TIE evidence, apart from machine readings.
 
@@ -212,7 +327,7 @@ def signoffs_from_herald_export(
     nobody signed, or one with nothing behind it, is not evidence of anything, and dropping it quietly is how a
     confirmation gets lost.
     """
-    expected_hash, entries = _verified_entries(source, export, trusted_keys)
+    expected_hash, entries = _verified_entries(source, export, trusted_keys, audience, max_age_seconds, now)
     records: List[EvidenceRecord] = []
     for entry in entries:
         if entry.get("reading") != SIGNOFF_READING:
