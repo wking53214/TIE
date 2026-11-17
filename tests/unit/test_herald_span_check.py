@@ -58,7 +58,7 @@ def _export_over(text, *spans_and_raws):
 
 def _take(text, export):
     return evidence_from_herald_export(
-        create_source("doc-1", text), export, trusted_keys=_KEY_PINNED, now=NOW)
+        create_source(EXPORT["document"]["source_id"], text), export, trusted_keys=_KEY_PINNED, now=NOW)
 
 
 def _mutated(**changes):
