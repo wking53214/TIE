@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from tie.evidence.herald_intake import (
+    HandoffLedger,
     HeraldIntakeRefused,
     SeenHandoffs,
     evidence_from_herald_export,
@@ -131,3 +132,12 @@ def test_record_handoff_once_with_trusted_keys_still_claims_once_for_a_genuine_e
     record_handoff_once(EXPORT, ledger, trusted_keys=PINNED, now=NOW)
     with pytest.raises(HeraldIntakeRefused, match="already taken in"):
         record_handoff_once(EXPORT, ledger, trusted_keys=PINNED, now=NOW)
+
+
+def test_DECISION_the_ledger_contract_has_no_release_operation():
+    """Decided: a claim is at-most-once and TIE offers no way to un-claim. A release would let a caller's mistake
+    reopen replay for an export that was really used. A deployment that wants retry asks for a fresh export (new ID).
+    If this test fails because a release was added, that is a change of decision, not a harmless addition."""
+    for name in ("release", "unrecord", "forget", "unclaim", "discard"):
+        assert not hasattr(SeenHandoffs, name), name
+        assert not hasattr(HandoffLedger, name), name
