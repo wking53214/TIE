@@ -218,6 +218,46 @@ def record_handoff_once(export: Mapping[str, Any], seen: SeenHandoffs) -> None:
     seen.record(handoff_id)
 
 
+# A sanity bound, not a policy: it keeps max_age_seconds inside what a time difference can hold (about 31 years).
+MAX_AGE_LIMIT_SECONDS = 10**9
+
+
+def _check_call(export: Any, trusted_keys: Any, audience: Any, max_age_seconds: Any, now: Any) -> None:
+    """Refuse a badly configured call, or a badly typed export, with a controlled refusal instead of a Python error."""
+    if not isinstance(export, Mapping):
+        raise HeraldIntakeRefused("a HERALD export must be a JSON object")
+    if not isinstance(trusted_keys, Mapping):
+        raise HeraldIntakeRefused("trusted_keys must map key IDs to public keys")
+    if not isinstance(audience, str) or not audience.strip():
+        raise HeraldIntakeRefused("audience must be a non-empty string")
+    if not _is_index(max_age_seconds) or not 1 <= max_age_seconds <= MAX_AGE_LIMIT_SECONDS:
+        raise HeraldIntakeRefused(
+            f"max_age_seconds must be a whole number from 1 to {MAX_AGE_LIMIT_SECONDS}, not {max_age_seconds!r}")
+    if now is not None and (not isinstance(now, datetime) or now.tzinfo is None):
+        raise HeraldIntakeRefused("now must be a time zone aware datetime")
+
+
+def _check_entry_shapes(export: Mapping[str, Any]) -> None:
+    """Check the whole admitted list before any entry is processed, so a malformed one admits nothing."""
+    admitted = export.get("admitted", [])
+    if not isinstance(admitted, (list, tuple)):
+        raise HeraldIntakeRefused("the export's admitted claims must be a list")
+    for position, entry in enumerate(admitted):
+        if not isinstance(entry, Mapping):
+            raise HeraldIntakeRefused(f"admitted claim {position} is not a JSON object")
+        for field in ("kind", "source_hash"):
+            value = entry.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise HeraldIntakeRefused(f"admitted claim {position} has no usable {field}")
+        reading = entry.get("reading")
+        if reading is not None and not isinstance(reading, str):
+            # A missing or unknown reading is skipped by both paths, as before; only a wrongly typed one is refused.
+            raise HeraldIntakeRefused(f"admitted claim {position} has a reading that is not text")
+        segment = entry.get("segment")
+        if segment is not None and not isinstance(segment, str):
+            raise HeraldIntakeRefused(f"admitted claim {position} has a segment that is not text")
+
+
 def _verified_entries(
     source: SourceRecord,
     export: Mapping[str, Any],
@@ -231,8 +271,10 @@ def _verified_entries(
         raise HeraldIntakeRefused(
             "no trusted HERALD export keys supplied; refusing unverified HERALD output"
         )
+    _check_call(export, trusted_keys, audience, max_age_seconds, now)
     _check_signature(export, trusted_keys)
     _check_identity(export, audience, max_age_seconds, now)
+    _check_entry_shapes(export)
 
     expected_hash = _text_hash(source.content)
     entries = tuple(export.get("admitted", []))
