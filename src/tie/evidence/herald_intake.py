@@ -242,7 +242,34 @@ def _verified_entries(
                 f"claim {entry.get('claim_id')!r} was read from different text "
                 "than the source it was offered with"
             )
+        _check_span(entry, source.content)
     return expected_hash, entries
+
+
+def _is_index(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _check_span(entry: Mapping[str, Any], text: str) -> None:
+    """Refuse a claim whose quoted text is not what the source holds at its declared span.
+
+    HERALD's span convention, taken from its own seal check: `span` is `[start, end)` in characters (Python string
+    offsets, not bytes) into the exact source text, with no normalization, and `raw` is exactly `text[start:end]`.
+    A valid signature and a matching document hash do not prove that; this does. An empty span is refused even though
+    HERALD can represent one, because it cannot quote anything. Overlapping claims are allowed: one stretch of text can
+    honestly yield two kinds."""
+    claim_id = entry.get("claim_id")
+    span = entry.get("span")
+    if not isinstance(span, (list, tuple)) or len(span) != 2 or not all(_is_index(v) for v in span):
+        raise HeraldIntakeRefused(f"claim {claim_id!r} has a malformed span")
+    start, end = span
+    if not 0 <= start < end <= len(text):
+        raise HeraldIntakeRefused(f"claim {claim_id!r} has a span {list(span)} outside the source text or empty")
+    raw = entry.get("raw")
+    if not isinstance(raw, str):
+        raise HeraldIntakeRefused(f"claim {claim_id!r} has no quoted text")
+    if text[start:end] != raw:
+        raise HeraldIntakeRefused(f"claim {claim_id!r} quotes text that is not at its declared span")
 
 
 def evidence_from_herald_export(
