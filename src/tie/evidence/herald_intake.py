@@ -232,10 +232,10 @@ def record_handoff_once(
     export: Mapping[str, Any],
     seen: Any,
     *,
-    trusted_keys: Optional[Mapping[str, Ed25519PublicKey]] = None,
+    trusted_keys: Mapping[str, Ed25519PublicKey] | None = None,
     audience: str = DEFAULT_AUDIENCE,
     max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
-    now: Optional[datetime] = None,
+    now: datetime | None = None,
 ) -> None:
     """Call once per export, after it has been accepted, to claim its handoff ID. Refuses a repeat.
 
