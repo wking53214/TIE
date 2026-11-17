@@ -270,7 +270,8 @@ def record_handoff_once(export: Mapping[str, Any], seen: Any) -> None:
 MAX_AGE_LIMIT_SECONDS = 10**9
 
 
-def _check_call(export: Any, trusted_keys: Any, audience: Any, max_age_seconds: Any, now: Any) -> None:
+def _check_call(export: Any, trusted_keys: Any, audience: Any, max_age_seconds: Any, now: Any,
+                expected_herald: Any = None) -> None:
     """Refuse a badly configured call, or a badly typed export, with a controlled refusal instead of a Python error."""
     if not isinstance(export, Mapping):
         raise HeraldIntakeRefused("a HERALD export must be a JSON object")
@@ -283,6 +284,12 @@ def _check_call(export: Any, trusted_keys: Any, audience: Any, max_age_seconds: 
             f"max_age_seconds must be a whole number from 1 to {MAX_AGE_LIMIT_SECONDS}, not {max_age_seconds!r}")
     if now is not None and (not isinstance(now, datetime) or now.tzinfo is None):
         raise HeraldIntakeRefused("now must be a time zone aware datetime")
+    if expected_herald is not None and (
+            not isinstance(expected_herald, Mapping) or not expected_herald
+            or not set(expected_herald) <= {"version", "code_hash"}
+            or not all(isinstance(v, str) and v for v in expected_herald.values())):
+        raise HeraldIntakeRefused(
+            "expected_herald must be a non-empty mapping of 'version' and/or 'code_hash' to text")
 
 
 def _check_entry_shapes(export: Mapping[str, Any]) -> None:
@@ -306,6 +313,55 @@ def _check_entry_shapes(export: Mapping[str, Any]) -> None:
             raise HeraldIntakeRefused(f"admitted claim {position} has a segment that is not text")
 
 
+def _check_producer_build(export: Mapping[str, Any], expected: Mapping[str, str] | None) -> None:
+    """If the caller names the HERALD build it expects, refuse an export made by any other.
+
+    The version and code hash sit inside the signed payload, so they are the signer's statement about its own build. A
+    signer that lies about its build passes this check; what it catches is an export from an old or different build
+    of an honest producer. The key pin, not this, is what establishes who the producer is."""
+    if expected is None:
+        return
+    herald = export.get("herald")
+    herald = herald if isinstance(herald, Mapping) else {}
+    for name, wanted in expected.items():
+        if herald.get(name) != wanted:
+            raise HeraldIntakeRefused(
+                f"HERALD export was made by {name} {herald.get(name)!r}, but {wanted!r} was expected")
+
+
+def _check_source_identity(export: Mapping[str, Any], source: SourceRecord) -> None:
+    """The export's own account of which document it is about must be the source it is offered with.
+
+    The per-claim source hash binds the TEXT (that check runs per claim, with its own message). This binds the NAME: without it, a genuine export about one document
+    could be taken in as evidence for a differently named source that happens to hold the same text."""
+    document = export.get("document")
+    document = document if isinstance(document, Mapping) else {}
+    if document.get("source_id") != source.source_id:
+        raise HeraldIntakeRefused(
+            f"HERALD export is about source {document.get('source_id')!r}, not {source.source_id!r}")
+
+
+def _check_no_duplicates(entries: tuple) -> None:
+    """Refuse an export that admits the same claim twice, or two claims under one ID.
+
+    Evidence IDs come from (source hash, kind, span, quote), so a repeated claim would give two records with one ID.
+    A sign-off ID also includes who confirmed it."""
+    seen_claim_ids: set = set()
+    seen_evidence: set = set()
+    for entry in entries:
+        claim_id = entry.get("claim_id")
+        if isinstance(claim_id, str):
+            if claim_id in seen_claim_ids:
+                raise HeraldIntakeRefused(f"HERALD export lists claim {claim_id!r} more than once")
+            seen_claim_ids.add(claim_id)
+        who = entry.get("confirmed_by") if entry.get("reading") == SIGNOFF_READING else None
+        key = (entry.get("kind"), tuple(entry["span"]), entry.get("raw"), who)
+        if key in seen_evidence:
+            raise HeraldIntakeRefused(
+                f"HERALD export admits the same {entry.get('kind')!r} claim at {list(entry['span'])} more than once")
+        seen_evidence.add(key)
+
+
 def _verified_entries(
     source: SourceRecord,
     export: Mapping[str, Any],
@@ -313,15 +369,18 @@ def _verified_entries(
     audience: str = DEFAULT_AUDIENCE,
     max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
     now: Optional[datetime] = None,
+    expected_herald: Mapping[str, str] | None = None,
 ) -> tuple:
     """The admitted entries of a verified export, each checked against the source text. Raises on any failure."""
     if not trusted_keys:
         raise HeraldIntakeRefused(
             "no trusted HERALD export keys supplied; refusing unverified HERALD output"
         )
-    _check_call(export, trusted_keys, audience, max_age_seconds, now)
+    _check_call(export, trusted_keys, audience, max_age_seconds, now, expected_herald)
     _check_signature(export, trusted_keys)
     _check_identity(export, audience, max_age_seconds, now)
+    _check_producer_build(export, expected_herald)
+    _check_source_identity(export, source)
     _check_entry_shapes(export)
 
     expected_hash = _text_hash(source.content)
@@ -332,7 +391,12 @@ def _verified_entries(
                 f"claim {entry.get('claim_id')!r} was read from different text "
                 "than the source it was offered with"
             )
+        if entry.get("source_id") != source.source_id:
+            raise HeraldIntakeRefused(
+                f"claim {entry.get('claim_id')!r} names source {entry.get('source_id')!r}, "
+                f"not {source.source_id!r}")
         _check_span(entry, source.content)
+    _check_no_duplicates(entries)
     return expected_hash, entries
 
 
@@ -370,13 +434,15 @@ def evidence_from_herald_export(
     audience: str = DEFAULT_AUDIENCE,
     max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
     now: Optional[datetime] = None,
+    expected_herald: Mapping[str, str] | None = None,
 ) -> List[EvidenceRecord]:
     """Turn the admitted claims of a HERALD export into TIE evidence records.
 
     ``trusted_keys`` maps HERALD export key IDs to the Ed25519 public keys the caller pins. The export must be
     signed by one of them (see the module docstring). The caller never supplies a verifier function.
     """
-    expected_hash, entries = _verified_entries(source, export, trusted_keys, audience, max_age_seconds, now)
+    expected_hash, entries = _verified_entries(
+        source, export, trusted_keys, audience, max_age_seconds, now, expected_herald)
     records: List[EvidenceRecord] = []
     for entry in entries:
         if entry.get("reading") not in MACHINE_READINGS:
@@ -431,6 +497,7 @@ def signoffs_from_herald_export(
     audience: str = DEFAULT_AUDIENCE,
     max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
     now: Optional[datetime] = None,
+    expected_herald: Mapping[str, str] | None = None,
 ) -> List[EvidenceRecord]:
     """Turn the claims a named person confirmed at HERALD into TIE evidence, apart from machine readings.
 
@@ -444,7 +511,8 @@ def signoffs_from_herald_export(
     nobody signed, or one with nothing behind it, is not evidence of anything, and dropping it quietly is how a
     confirmation gets lost.
     """
-    expected_hash, entries = _verified_entries(source, export, trusted_keys, audience, max_age_seconds, now)
+    expected_hash, entries = _verified_entries(
+        source, export, trusted_keys, audience, max_age_seconds, now, expected_herald)
     records: List[EvidenceRecord] = []
     for entry in entries:
         if entry.get("reading") != SIGNOFF_READING:
