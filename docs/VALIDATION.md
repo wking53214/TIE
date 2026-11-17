@@ -7,7 +7,8 @@
 - A reconstruction cites evidence IDs.
 - A claim that coverage is complete is honest (it needs segments to back it).
 - A source with no inspected segments fails validation.
+- The routing signal is a plain label or absent (letters, digits, dot, underscore, hyphen; starts with a letter; at most 64 characters), and the package and its typed handoff carry the same signal. This is a data-shape check. It is not an authorization, and nothing in TIE acts on the signal.
 
-Partial coverage does not fail validation. It is reported as a warning and carried into the typed handoff. The routing check is hardcoded to pass (`src/tie/validation/validate.py`), so it cannot fail.
+Partial coverage does not fail validation. It is reported as a warning and carried into the typed handoff.
 
 This is structural/conservation-oriented validation. It is not a claim that a historical reconstruction is true merely because its package validates.

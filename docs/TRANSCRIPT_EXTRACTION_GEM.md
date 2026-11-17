@@ -129,7 +129,7 @@ Current state of the TIE side:
 
 - No mapping exists between this document's vocabulary (EXPLICIT, INFERRED, UNCERTAIN, plus FACT, INFERENCE, ASSUMPTION) and TIE's (EXPLICIT, INFERRED, UNKNOWN, CONFLICTED). See `docs/ARCHITECTURE.md`.
 - HERALD intake records every admitted claim as INFERRED, including human-confirmed claims.
-- Source-span text is not verified against the source (see the README's HERALD intake section).
+- HERALD intake verifies that each claim's quoted text is what the source holds at its declared span (see the README's HERALD intake section).
 - No test checks any of the six requirements above.
 
 ## Quality Standards
