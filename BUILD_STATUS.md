@@ -16,11 +16,11 @@ Five user-supplied TIE forensic summaries reconciled as one corpus.
 
 ## Actual execution
 
-Measured 2026-11-16 at commit `e7ad5b2` (branch `claude/post-upgrade-reconciliation`), Python 3.13.18, `python -m pytest -q -rs`:
+Measured 2026-11-16 at commit `db1cc5b` (branch `claude/intake-identity-and-build-pin`), Python 3.13.18, `python -m pytest -q -rs`:
 
-- CNS 4.1.0 importable, `jsonschema` not installed: 344 passed, 1 skipped (the schema conformance tests).
-- `jsonschema` installed, no CNS: 229 passed, 1 skipped (the CNS connector tests).
-- Neither installed: 223 passed, 2 skipped.
+- CNS 4.1.0 importable, `jsonschema` not installed: 381 passed, 1 skipped (the schema conformance tests).
+- `jsonschema` installed, no CNS: 266 passed, 1 skipped (the CNS connector tests).
+- Neither installed: 260 passed, 2 skipped.
 - The CI matrix (3.11, 3.12, 3.13, with and without CNS) runs the same suites; each commit's result is on its Actions page. No single local environment here has both CNS and `jsonschema`, so no one local run executes every test.
 - The `cns` extra in `pyproject.toml` pins CNS v4.0.0; the local runs above used 4.1.0.
 
