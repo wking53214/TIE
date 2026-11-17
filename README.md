@@ -46,7 +46,7 @@ Numbers below were measured on the date and commit shown in the table.
 | Version | 0.1.0 (`pyproject.toml`) |
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
 | CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. This README does not name a commit as current. Each commit's CI result is on its Actions page. |
-| Tests | `python -m pytest tests -q`: 195 passed with CNS importable and `jsonschema` installed; 74 passed and 1 skipped without `cns`. Both are local runs on Python 3.13, 2026-11-10, main `5a0dc59`, CNS v2.3.0 for the first. |
+| Tests | `python -m pytest tests -q`, local runs on Python 3.13 at main `8adc47b`, 2026-11-16: 309 passed and 1 skipped with CNS 4.1.0 importable (the skip is the schema conformance test, because `jsonschema` was not installed); 188 passed and 2 skipped without CNS (the CNS connector test and the same schema test). The CI matrix runs the same suites on 3.11, 3.12 and 3.13; each commit's result is on its Actions page. |
 | Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable (measured 2026-11-10, main `5a0dc59`). An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
 | CNS pin | The optional `cns` extra is pinned to the tag v4.0.0 (`pyproject.toml`) |
 
@@ -136,7 +136,7 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
 
 **Maturity and limitations.**
-- 195 tests pass with CNS importable. Without CNS: 74 pass and 1 skips (see the table above for when and where). One runtime dependency (`cryptography`).
+- 309 tests pass with CNS importable; without CNS, 188 pass and 2 skip (see the table above for when and where). One runtime dependency (`cryptography`).
 - The package model is a reconstruction (`BUILD_STATUS.md`), not the historical TIE.
 - Intake records `INFERRED` evidence only; it never produces `EXPLICIT`.
 - The `routing_not_execution` check in `validate_package` is hardcoded `True` (in `src/tie/validation/validate.py`) and cannot fail.
