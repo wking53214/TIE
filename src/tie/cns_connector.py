@@ -36,7 +36,7 @@ string keys, sets are sorted. Nothing volatile or process-local is bound (TIE
 records no clocks and no object identities), so the same package built twice
 digests the same.
 
-Install with the extra: ``pip install 'tie-transcript-intelligence-engine[cns]'``.
+Install with the extra: ``pip install 'tie-transcript-intelligence-engine[cns] @ git+https://github.com/wking53214/TIE.git@main'``.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ __all__ = [
     "package_digest",
 ]
 
-INSTALL_HINT = "pip install 'tie-transcript-intelligence-engine[cns]'"
+INSTALL_HINT = "pip install 'tie-transcript-intelligence-engine[cns] @ git+https://github.com/wking53214/TIE.git@main'"
 
 PACKAGE_SUBJECT = "tie.package"
 HANDOFF_SUBJECT = "tie.handoff"

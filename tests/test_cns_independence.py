@@ -17,7 +17,7 @@ SRC = ROOT / "src"
 PACKAGE = SRC / "tie"
 BLOCK = "import sys; sys.modules['cns'] = None; sys.modules['cns.gate'] = None\n"
 ENV = {"PYTHONPATH": str(SRC), "PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PYTHONDONTWRITEBYTECODE": "1"}
-HINT = "pip install 'tie-transcript-intelligence-engine[cns]'"
+HINT = "pip install 'tie-transcript-intelligence-engine[cns] @ git+https://github.com/wking53214/TIE.git@main'"
 PIPELINE = """
     from tie import (EpistemicStatus, build_package, create_source, evidence_from_statement,
                      reconstruct_summary, segment_source)
