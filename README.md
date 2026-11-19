@@ -47,19 +47,20 @@ Numbers below were measured on the date and commit shown in the table.
 | Tag and GitHub Release | None yet. Tagging is the owner's decision. |
 | CI workflow | `.github/workflows/tests.yml` runs pytest on Python 3.11, 3.12 and 3.13, with and without CNS. This README does not name a commit as current. Each commit's CI result is on its Actions page. |
 | Tests | `python -m pytest tests -q -rs`, local runs on Python 3.13.18 at `e7ad5b2`, 2026-11-16: 344 passed and 1 skipped with CNS 4.1.0 importable and no `jsonschema`; 229 passed and 1 skipped with `jsonschema` and no CNS; 223 passed and 2 skipped with neither. No one local environment has both, so see `BUILD_STATUS.md`. The CI matrix runs the suites on 3.11, 3.12 and 3.13, with and without CNS. |
-| Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable (measured 2026-11-10, main `5a0dc59`). An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI does not run ruff. |
+| Lint | `ruff check .` (ruff 0.16.9, default config, no ruff settings in `pyproject.toml`) reports 70 findings, 44 of them auto-fixable (measured 2026-11-10, main `5a0dc59`). An earlier revision of this README recorded 32 under a different ruff version; the count depends on the version. CI runs ruff and mypy against a recorded baseline (`tools/lint_baseline.json`): a new finding fails, the recorded ones are tolerated (INSPECTED 2026-11-17 at `7619b95` in `.github/workflows/tests.yml`). With ruff 0.16.9 the count at that commit is 78 (EXECUTED). |
+| Tests, 2026-11-17 | EXECUTED at `7619b95` (Phase 2 review, local, Python 3.13), four environments. Neither CNS nor `jsonschema`: 264 passed, 2 skipped. `jsonschema` only: 270 passed, 1 skipped. CNS only, required, at the pinned tag v4.0.0 and again at v4.1.0: 385 passed, 1 skipped. Both: 391 passed, 0 skipped. The counts in the Tests row above and in the maturity list below were measured at earlier commits and are lower. The lint baseline check passed. Not run: CI. |
 | CNS pin | The optional `cns` extra is pinned to the tag v4.0.0 (`pyproject.toml`) |
 
 ### Running the spine check (from CNS)
 
 The check lives in the CNS repository, not this one. To run it:
 
-1. Check out the CNS repository, and check out HERALD, TIE, Conservation_Kernel, Governance_Gateway and ccc into one shared parent folder, next to CNS.
+1. Check out the CNS repository, and check out HERALD, TIE, Conservation_Kernel, Governance_Gateway, ccc and UAI-2 into one shared parent folder, next to CNS. UAI-2 is needed because the spine script imports its `cns_interop` package. With only the five spine repositories the script stops at an import error (EXECUTED 2026-11-17).
 2. Install the `cryptography` package for Python 3.11 or newer. Installing TIE's optional CNS extra is not needed for this check.
-3. Put the CNS folder and each sibling's source folder on the Python path, then run the spine script from the CNS folder.
+3. Put the CNS folder and each sibling's source folder on the Python path (for UAI-2, its top folder), then run the spine script from the CNS folder.
 4. A clean run defines 52 scenarios, 3 of them recorded gaps (the seams nothing checks yet), then prints 4 more checks: 56 results in all, with no failures and exit 0.
 
-Results depend on the sibling repository versions. A run on other commits may differ, and that should be recorded with the run.
+Results depend on the sibling repository versions. A run on other commits may differ, and that should be recorded with the run. EXECUTED 2026-11-17 with UAI-2 on the path and every repository at its `main` (CNS `6e713e5`, HERALD `1e2bcca`, TIE `7619b95`, Conservation_Kernel `8ed1636`, Governance_Gateway `b976e60`, CCC `2379de8`, UAI-2 `e7919b5`): 57 results, 3 recorded gaps, no failures, exit 0. That is one result more than step 4 describes. At the commits of 2026-11-15 the same run gave 56.
 
 ## 5. Core Invariants & Guarantees
 
@@ -81,6 +82,8 @@ The diagram above is the GEMS-side view. The spine view follows in the next sect
 ### Place in the evidence spine
 
 The evidence spine is the five repositories a document passes through in order: HERALD reads it and extracts claims, TIE records the evidence, Conservation_Kernel decides whether a root may be admitted, Governance_Gateway judges the admission door, and CCC takes the document into its store. CNS holds the roster that makes the decision, the check that every seat judged the same document, and the one-use guard that lets an approved decision open only the door it judged. `chains/evidence_spine.py` in CNS runs all of it end to end. Measured 2026-11-07 with each repository at its default branch (CNS 19c92c5, HERALD 5505d55, TIE 897f033, Conservation_Kernel 3aab1ae, Governance_Gateway 1bede83, ccc 6f80792): exit 0, 52 scenarios plus 4 checks (56 results) all ok, 3 recorded GAPs (including a kernel built without its guard and called directly), which the script asserts as stated facts and never skips. An earlier run on 2026-10-30 reported 30 results and one GAP; that count is superseded.
+
+The three middle hand-offs (TIE evidence into a kernel root, a kernel root into the gateway's artifact, the document into CCC's attempt) are also shipped as library functions in the [Spine](https://github.com/wking53214/Spine) repository (`spine.evidence`, `spine.door`, `spine.ccc`). Spine passes its own 41 tests at its pinned versions and has no running service (EXECUTED 2026-11-19 at Spine `7717f12`); it pins this repository at `9d3ad38`, 27 commits behind main.
 
 TIE is the second hop. It records evidence from statements the caller supplies or from a verified HERALD export and writes no records of its own: it persists nothing and ships only an in-memory replay ledger (not durable), so it has no write permission to gate. Its package and handoff can be bound to a CNS verdict (section 8), so a verdict can be checked against the exact package it was about.
 
@@ -109,7 +112,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 | Repository | Relationship to TIE |
 |---|---|
 | [HERALD](https://github.com/wking53214/HERALD) | Upstream. TIE imports nothing from HERALD. It takes HERALD's signed export (Ed25519; version 4, or the older version 3 until 2027-03-31) and verifies it itself against the public keys the caller pins (`trusted_keys`). It does not accept a verifier function from the caller. |
-| [Conservation_Kernel](https://github.com/wking53214/Conservation_Kernel) | Downstream in the spine. The CNS spine script's docstring states that no repository ships the step from TIE evidence to a kernel root; the script writes that step itself and builds the kernel with an evidence guard (`tie_evidence_guard`) that accepts only records TIE produced. Kernel source not checked. |
+| [Conservation_Kernel](https://github.com/wking53214/Conservation_Kernel) | Downstream in the spine. The CNS spine script's docstring states that no repository ships the step from TIE evidence to a kernel root; the script writes that step itself and builds the kernel with an evidence guard (`tie_evidence_guard`) that accepts only records TIE produced. The Spine repository's `spine.evidence` now also ships that step as a library function. Kernel source not checked. |
 | [Governance_Gateway](https://github.com/wking53214/Governance_Gateway) | Downstream in the spine per the CNS script. TIE has no code that touches it. Its source was not checked. |
 | [CCC](https://github.com/wking53214/CCC) | Last in the spine per the CNS script. TIE has no code that touches it. Its source was not checked. |
 | [CNS](https://github.com/wking53214/CNS) | Shared-contract foundation. Holds shapes, not decisions. See the CNS interaction below. |
@@ -118,7 +121,7 @@ TIE is the second hop. It records evidence from statements the caller supplies o
 
 ```text
 HERALD ──signed export──▶ TIE ──evidence records──▶ (caller-written step) ──▶ Conservation_Kernel ─▶ Governance_Gateway ─▶ CCC
- reads + extracts         records, refuses a            CNS spine script only                     (each judges its own door)
+ reads + extracts         records, refuses a            CNS script, or Spine                      (each judges its own door)
  claims                   changed or unverified export
 
 CNS (optional; TIE's side is one-way, CNS's spine script also imports TIE): tie.cns_connector ─▶ cns.gate.subject_digest / GateResult.binds
@@ -134,6 +137,10 @@ CNS spine script (chains/evidence_spine.py) ─▶ imports tie.evidence.herald_i
 - Implemented, CNS side: CNS's spine script imports TIE's intake (`herald_intake` in `chains/evidence_spine.py` in the CNS repo, and calls into it at several points; checked 2026-11-07 by reading the source, and run once that day, see the next section). That is CNS using TIE, not TIE using CNS.
 - Absent: no TIE code imports `cns`, `cns_interop` or `cns_composition` at module load, and nothing in `src/tie` calls the connector. TIE issues no verdict, defines no gate, and has no UAI-1 signed-message code (checked by grep over `src`; the only `cns` references are in `cns_connector.py`).
 - So the integration is binding only. A CNS verdict about a TIE package is possible to check, but nothing in TIE produces or requires one.
+
+**Role Within ≡TACK, in authority terms.** Evidence generation for ingested claims, and evidence verification of one thing: a HERALD export on intake. TIE checks its signature, who it is addressed to, its age, the source name and text hash, each claim's quoted span, and its structure. TIE defines no policy, authorizes nothing and authenticates no person (a sign-off is a recorded name). The only thing it enforces is its own refusal of a bad export.
+
+**Failure behavior.** Intake fails closed (EXECUTED 2026-11-17 at `7619b95`, with exports made by HERALD `1e2bcca`): an export signed by a key not in `trusted_keys`, addressed to someone else, signed more than 24 hours ago, about a differently named source, read from different text, edited after signing, or of the in-process version 2 kind was refused. The weaker points: a version 3 export, which carries no audience, signing time or handoff ID, is still accepted with a warning until 2027-03-31, and its replay cannot be tracked. Replay protection is the caller's job. Intake records nothing itself. `record_handoff_once` checks nothing unless it is given `trusted_keys`; without them an edited export claimed an ID (EXECUTED). The ledger that ships is in memory, so it is empty after a restart and a second ledger accepted the same export again (EXECUTED). `validate_package`'s `routing_not_execution` check looks at shape only. Nothing here keeps evidence after the process ends.
 
 **Maturity and limitations.**
 - 381 tests pass with CNS importable (1 skip: the schema tests, no `jsonschema` in that run); without CNS or `jsonschema`, 260 pass and 2 skip (see the table above for when, where and commit). One runtime dependency (`cryptography`).
