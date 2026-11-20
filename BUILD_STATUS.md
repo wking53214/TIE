@@ -22,7 +22,7 @@ Measured 2026-11-16 at commit `db1cc5b` (branch `claude/intake-identity-and-buil
 - `jsonschema` installed, no CNS: 266 passed, 1 skipped (the CNS connector tests).
 - Neither installed: 260 passed, 2 skipped.
 - The CI matrix (3.11, 3.12, 3.13, with and without CNS) runs the same suites; each commit's result is on its Actions page. No single local environment here has both CNS and `jsonschema`, so no one local run executes every test.
-- The `cns` extra in `pyproject.toml` pins CNS v4.0.0; the local runs above used 4.1.0.
+- The `cns` extra in `pyproject.toml` pins CNS v4.1.0, the version the local runs above used.
 
 Static checks at the same commit (pinned ruff 0.16.9 and mypy 2.3.1): ruff 79 findings and mypy 7 findings, all recorded in `tools/lint_baseline.json`. CI fails on any finding above that baseline; it does not fix or hide the existing ones.
 

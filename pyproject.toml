@@ -15,7 +15,7 @@ dependencies = ["cryptography>=42"]
 [project.optional-dependencies]
 test = ["pytest>=8", "jsonschema>=4"]
 # Optional: lets a TIE package or handoff be named for a CNS verdict (tie.cns_connector). Nothing in TIE imports CNS otherwise.
-cns = ["cns @ git+https://github.com/wking53214/CNS.git@v4.0.0"]
+cns = ["cns @ git+https://github.com/wking53214/CNS.git@v4.1.0"]
 # Pinned exactly: the recorded baseline in tools/lint_baseline.json depends on these versions.
 lint = ["ruff==0.16.9", "mypy==2.3.1"]
 
